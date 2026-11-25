@@ -1105,7 +1105,8 @@ git status --short   # 只剩 " M index.html"</pre>
 
         body.innerHTML = `
           <div class="step-label">步驟 4 / 5・常見卡點預測</div>
-          <div class="step-op">暫存 <code>README.md</code> 後又改了一次，這時 <code>git commit</code> 會包含哪一版？</div>
+          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>回到步驟 2，先暫存第 1 版（尚未 commit），再修改一次 <code>README.md</code>（第 2 版）。</div>
+          <div class="step-op">這時直接執行 <code>git commit</code>，會包含哪一版？</div>
           <div class="choice-list">
             <button class="choice-btn ${unit1Pred === 0 ? "correct" : ""}" onclick="pickUnit1Pred(0)">A. 只包含第 1 版（上次 git add 當下的內容）</button>
             <button class="choice-btn ${unit1Pred === 1 ? "wrong" : ""}" onclick="pickUnit1Pred(1)">B. 包含第 1 版＋剛改好的第 2 版</button>
@@ -1113,15 +1114,18 @@ git status --short   # 只剩 " M index.html"</pre>
           ${predHtml}
           <details class="cmd-details">
             <summary>展開完整指令</summary>
-            <pre class="code-block">git diff --staged   # 檢查即將提交的內容
-git diff            # 檢查還沒暫存的新改動
-git add README.md   # 想納入第 2 版需重新暫存</pre>
+            <pre class="code-block">git add README.md   # 暫存第 1 版（尚未 commit）
+# 接著再修改一次 README.md（第 2 版）
+git status --short  # 會出現 "MM README.md"
+git diff --staged   # 檢查即將提交的內容（第 1 版）
+git diff            # 檢查還沒暫存的新改動（第 2 版）</pre>
           </details>
         `;
       } else {
-        const quizFeedback = unit1Quiz === 0 ? `
+        const showPassed = unit1Quiz === 0 || (unit1Quiz === null && unitMap.unit1);
+        const quizFeedback = showPassed ? `
           <div class="feedback-box feedback-ok">
-            <b>✓ 答對了！已完成單元 1</b><br />
+            <b>✓ ${unit1Quiz === 0 ? "答對了！已完成單元 1" : "已完成單元 1（可重新作答或直接複習題卡）"}</b><br />
             <code>MM README.md</code> 代表左欄有已暫存的版本、右欄又有尚未暫存的新改動；<code> M index.html</code> 尚未暫存。因此現在提交只會帶進 <code>README.md</code> 上次暫存的內容。
             <div style="margin-top:10px;">
               <button class="btn btn-primary" style="width:100%;" onclick="reviewUnit1Cards()">👉 複習本單元題卡（Q1～Q3）</button>
@@ -1147,16 +1151,14 @@ git add README.md   # 想納入第 2 版需重新暫存</pre>
         `;
       }
 
-      document.getElementById("btn-step-prev").disabled = unit1Step === 0;
-      document.getElementById("btn-step-prev").style.opacity = unit1Step === 0 ? "0.45" : "1";
+      const prevBtn = document.getElementById("btn-step-prev");
       const nextBtn = document.getElementById("btn-step-next");
-      if (unit1Step === 4) {
-        nextBtn.textContent = "複習 Q1～Q3 →";
-        nextBtn.onclick = reviewUnit1Cards;
-      } else {
-        nextBtn.textContent = "下一步 →";
-        nextBtn.onclick = nextUnitStep;
-      }
+      prevBtn.disabled = unit1Step === 0;
+      prevBtn.style.opacity = unit1Step === 0 ? "0.45" : "1";
+      prevBtn.style.gridColumn = unit1Step === 4 ? "1 / -1" : "";
+      nextBtn.classList.toggle("hidden", unit1Step === 4);
+      nextBtn.textContent = "下一步 →";
+      nextBtn.onclick = nextUnitStep;
 
       document.getElementById("unit-roadmap").innerHTML = UNIT_ROADMAP.map(u => {
         const done = !!unitMap[u.id];
