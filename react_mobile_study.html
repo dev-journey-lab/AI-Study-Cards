@@ -541,7 +541,7 @@
       <div class="card">
         <div class="q-num" style="display:inline-block;margin-bottom:8px;">3. useEffect 執行時序速記</div>
         <div class="question-text" style="font-size:16px;">先清舊的 Cleanup，再跑新的 Effect</div>
-        <div class="answer-point">• <code>useEffect(fn, [])</code>：僅在初次掛載執行一次；元件卸載（Unmount）時執行 Cleanup。</div>
+        <div class="answer-point">• <code>useEffect(fn, [])</code>：僅在初次掛載執行一次；元件卸載（Unmount）時執行 Cleanup（開發環境 Strict Mode 會額外執行一次 setup 與 cleanup 以檢測副作用）。</div>
         <div class="answer-point">• <code>useEffect(fn, [id])</code>：<code>id</code> 變動後重新渲染完成 → 先執行上次的 Cleanup（如 <code>abort()</code>）→ 再執行本次 Effect。</div>
       </div>
     </div>
@@ -621,7 +621,7 @@
         hint: "useEffect 是在畫面「畫完之後」才跑，用來同步外部系統（API、計時器、事件監聽）。",
         ans: [
           "• <b>省略依賴陣列</b>：每次渲染後都執行（很少用，小心無限迴圈）。",
-          "• <b>空陣列 <code>[]</code></b>：只在元件<b>初次掛載（Mount）</b>執行一次；元件卸載（Unmount）時執行 Cleanup。",
+          "• <b>空陣列 <code>[]</code></b>：只在元件<b>初次掛載（Mount）</b>執行一次；元件卸載（Unmount）時執行 Cleanup（注意：開發環境 <b>Strict Mode</b> 會額外執行一次 setup 與 cleanup，用來檢測未妥善清理的副作用）。",
           "• <b>指定依賴 <code>[id]</code></b>：初次掛載與每次 <code>id</code> 變動後執行；下次重新執行前，會<b>先跑上次的 Cleanup</b> 清理舊計時器或取消舊請求。"
         ],
         code: "useEffect(() => {\n  const timer = setInterval(tick, 1000);\n  return () => clearInterval(timer); // Cleanup：防記憶體外洩\n}, []);"
@@ -634,9 +634,9 @@
         hint: "使用者快速切換分類 A → B，如果 A 的回應比 B 晚回來蓋掉畫面怎麼辦？",
         ans: [
           "• <b>三態管理</b>：維護 <code>data</code>、<code>loading</code>、<code>error</code> 三個狀態，讓畫面在載入中、失敗與成功時都有清楚回饋。",
-          "• <b>防競態條件</b>：在 Cleanup 中使用 <b><code>AbortController</code></b>（或 <code>let ignore = false</code> 旗標），當依賴變動或元件卸載時取消/忽略過時的舊請求。"
+          "• <b>防競態條件</b>：在 Cleanup 中使用 <b><code>AbortController</code></b>（或 <code>let ignore = false</code> 旗標）取消／忽略過時的舊請求；且 <code>.finally()</code> 中須先判斷 <code>!ctrl.signal.aborted</code>，避免舊請求被取消時提早把新請求的 <code>loading</code> 關掉。"
         ],
-        code: "useEffect(() => {\n  const ctrl = new AbortController();\n  setLoading(true);\n  fetch(`/api/cards?topic=${topic}`, { signal: ctrl.signal })\n    .then(r => r.json())\n    .then(data => setCards(data))\n    .catch(err => { if (err.name !== 'AbortError') setError(err); })\n    .finally(() => setLoading(false));\n  return () => ctrl.abort(); // 切換 topic 時取消舊請求\n}, [topic]);"
+        code: "useEffect(() => {\n  const ctrl = new AbortController();\n  setLoading(true);\n  fetch(`/api/cards?topic=${topic}`, { signal: ctrl.signal })\n    .then(r => r.json())\n    .then(data => setCards(data))\n    .catch(err => { if (err.name !== 'AbortError') setError(err); })\n    .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });\n  return () => ctrl.abort(); // 切換 topic 時取消舊請求\n}, [topic]);"
       },
       {
         id: 8,
