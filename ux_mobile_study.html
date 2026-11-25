@@ -262,9 +262,9 @@
       </div>
 
       <div class="card">
-        <div class="q-num" style="display:inline-block;margin-bottom:8px;">📝 階段實作核對清單（實機觀察交件）</div>
-        <div class="answer-point">• <b>實測任務</b>：拿手機開首頁，計時從「進首頁」到「完成 Git 第一單元驗收」花幾秒。</div>
-        <div class="answer-point">• <b>交出紀錄</b>：寫下 1 個最猶豫的畫面位置、當下以為會發生什麼，以及 1 個最小改動方案。</div>
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">📝 階段實作核對清單（現版實機觀察交件）</div>
+        <div class="answer-point">• <b>實測任務</b>：拿手機開現版首頁，計時從「進首頁」到「完成 Git 第一單元驗收」花幾秒。</div>
+        <div class="answer-point">• <b>交出紀錄</b>：如實記錄現版真正觀察到的行為——若有猶豫點，寫下畫面位置、預期與 1 個最小改動；若過程順利、沒有明顯停頓，也如實記錄耗時與讓動線順暢的原因（不必硬湊問題）。</div>
       </div>
     </div>
 
@@ -423,8 +423,20 @@
       return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
-    function saveProgress() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap)); } catch (_) {} }
-    function saveUnits() { try { localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap)); } catch (_) {} }
+    function saveProgress() {
+      try {
+        const latest = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
+        statusMap = { ...latest, ...statusMap };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
+      } catch (_) {}
+    }
+    function saveUnitDone(unitId) {
+      try {
+        const latest = JSON.parse(localStorage.getItem(UNIT_STORAGE_KEY) || "{}") || {};
+        unitMap = { ...latest, ...unitMap, [unitId]: true };
+        localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap));
+      } catch (_) {}
+    }
 
     function getFiltered() {
       if (currentCat === "all") return CARDS;
@@ -484,7 +496,7 @@
     function pickUxPred(c) { uxPred = c; renderUxUnit(); }
     function pickUxQuiz(c) {
       uxQuiz = c;
-      if (c === 1) { unitMap.unit1 = true; saveUnits(); }
+      if (c === 1) { saveUnitDone("unit1"); }
       renderUxUnit();
     }
 
@@ -516,12 +528,13 @@
         `;
       } else if (uxStep === 2) {
         body.innerHTML = `
-          <div class="step-label">步驟 3 / 5・區分現象與根因</div>
+          <div class="step-label">步驟 3 / 5・區分現象與根因（修正前的模擬案例）</div>
           <div class="step-op">把「使用者沒看到」轉譯成「介面缺少什麼線索」</div>
-          <pre class="code-block">表面現象：使用者在步驟 5 還沒作答就點底部跳走
+          <pre class="code-block">【修正前模擬案例】
+表面現象：使用者在步驟 5 還沒作答就點底部跳走
 根因分析：底部出現了重複的主色按鈕，搶走答題焦點
 最小改動：步驟 5 隱藏底部跳轉鈕，答對後才顯示複習鈕</pre>
-          <div class="step-explain">好的 UI 修正不是多寫一大段說明文字，而是讓「正確的下一步」自然顯眼。</div>
+          <div class="step-explain">好的 UI 修正不是多寫一大段說明文字，而是讓「正確的下一步」自然顯眼（這處問題在現版 Git 頁已修正）。</div>
         `;
       } else if (uxStep === 3) {
         const predHtml = uxPred !== null ? `
@@ -531,8 +544,8 @@
           </div>
         ` : "";
         body.innerHTML = `
-          <div class="step-label">步驟 4 / 5・常見卡點預測</div>
-          <div class="step-op">如果在步驟 5 驗收頁，底部同時放一顆醒目的「複習 Q1～Q3 →」按鈕，新手最可能發生什麼事？</div>
+          <div class="step-label">步驟 4 / 5・常見卡點預測（修正前的模擬案例）</div>
+          <div class="step-op">假設在修正前的步驟 5 驗收頁，底部同時放了一顆醒目的「複習 Q1～Q3 →」按鈕，新手最可能發生什麼事？</div>
           <div class="choice-list">
             <button class="choice-btn ${uxPred === 0 ? "correct" : ""}" onclick="pickUxPred(0)">A. 沒作答或答錯就直接點底部跳走，誤以為已完成單元</button>
             <button class="choice-btn ${uxPred === 1 ? "wrong" : ""}" onclick="pickUxPred(1)">B. 會更仔細把三個選項都讀完再慢慢決定</button>
@@ -544,7 +557,7 @@
         const fb = showPassed ? `
           <div class="feedback-box feedback-ok">
             <b>✓ ${uxQuiz === 1 ? "答對了！已完成 UI／UX 小練習" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
-            根因是「步驟 3 已提交，但步驟 4 沒提示回到步驟 2 的暫存狀態」。直接在步驟 4 題目前加上情境切換提示，就能在不增加閱讀負擔的情況下消除誤解。
+            根因是「步驟 3 已提交，但步驟 4 沒提示回到步驟 2 的暫存狀態」。直接在步驟 4 題目前加上情境切換提示，就能在不增加閱讀負擔的情況下消除誤解（現版 Git 頁已套用此修正）。
             <div style="margin-top:10px;">
               <button class="btn btn-primary" style="width:100%;" onclick="reviewUxCards()">👉 複習 UI／UX 基礎題卡（6 題）</button>
             </div>
@@ -556,8 +569,8 @@
         ` : "";
 
         body.innerHTML = `
-          <div class="step-label">步驟 5 / 5・單元驗收</div>
-          <div class="step-op">你觀察到 3 位測試者中有 2 位在 Git 步驟 4 停頓超過 15 秒，嘴裡說「剛才步驟 3 不是已經 commit 了嗎？怎麼還有暫存？」哪個改法最對症下藥？</div>
+          <div class="step-label">步驟 5 / 5・單元驗收（修正前的模擬案例）</div>
+          <div class="step-op">【修正前模擬案例】你觀察到 3 位測試者中有 2 位在舊版 Git 步驟 4 停頓超過 15 秒，嘴裡說「剛才步驟 3 不是已經 commit 了嗎？怎麼還有暫存？」哪個改法最對症下藥？</div>
           <div class="choice-list">
             <button class="choice-btn ${uxQuiz === 0 ? "wrong" : ""}" onclick="pickUxQuiz(0)">A. 把步驟 4 的字體放大兩倍並加粗紅字警告</button>
             <button class="choice-btn ${uxQuiz === 1 ? "correct" : ""}" onclick="pickUxQuiz(1)">B. 在步驟 4 開頭補一句「回到步驟 2，先暫存第 1 版（尚未 commit）再修改」的情境切換提示</button>
@@ -671,7 +684,8 @@
       if (!confirm("確定要重置「UI／UX 實戰」的單元與題卡進度嗎？")) return;
       statusMap = {}; unitMap = {}; listOpenMap = {};
       showAns = false; showHint = false; currentIdx = 0; uxStep = 0; uxPred = null; uxQuiz = null;
-      saveProgress(); saveUnits(); setCategory("all");
+      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UNIT_STORAGE_KEY); } catch (_) {}
+      setCategory("all");
       if (currentMode === "unit") renderUxUnit();
     }
 

@@ -944,12 +944,16 @@
 
     function saveProgress() {
       try {
+        const latest = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
+        statusMap = { ...latest, ...statusMap };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
       } catch (_) {}
     }
 
-    function saveUnits() {
+    function saveUnitDone(unitId) {
       try {
+        const latest = JSON.parse(localStorage.getItem(UNIT_STORAGE_KEY) || "{}") || {};
+        unitMap = { ...latest, ...unitMap, [unitId]: true };
         localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap));
       } catch (_) {}
     }
@@ -1043,8 +1047,7 @@
       unitQuizMap[activeUnit] = choice;
       const correctAnswer = activeUnit === "unit1" ? 0 : 1;
       if (choice === correctAnswer) {
-        unitMap[activeUnit] = true;
-        saveUnits();
+        saveUnitDone(activeUnit);
       }
       renderUnit();
     }
@@ -1307,8 +1310,8 @@ Your branch is behind 'origin/main' by 2 commits.</pre>
            </div>`
         : `<summary>📝 階段實作核對（可交出的終端機證據）</summary>
            <div style="margin-top:8px;line-height:1.55;">
-             • 從最新 <code>main</code> 開立分支完成一次小修改並推送。<br />
-             • 交出 <code>git branch --show-current</code>、<code>git push -u origin ...</code> 輸出與 GitHub PR 連結。
+             • 開分支前先同步主幹，交出 <code>git status -sb</code>（確認 <code>## main...origin/main</code> 已對齊、沒有 <code>behind</code>）。<br />
+             • 開立新分支完成小修改並推送，交出 <code>git branch --show-current</code>、<code>git push -u origin ...</code> 輸出與 GitHub PR 連結。
            </div>`;
 
       document.getElementById("unit-roadmap").innerHTML = UNIT_ROADMAP.map(u => {
@@ -1508,8 +1511,10 @@ Your branch is behind 'origin/main' by 2 commits.</pre>
       unitStepMap = { unit1: 0, unit2: 0 };
       unitPredMap = { unit1: null, unit2: null };
       unitQuizMap = { unit1: null, unit2: null };
-      saveProgress();
-      saveUnits();
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(UNIT_STORAGE_KEY);
+      } catch (_) {}
       setCategory("all");
       if (currentMode === "unit") renderUnit();
     }
