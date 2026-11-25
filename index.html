@@ -150,6 +150,59 @@
       transition: width 0.3s ease;
     }
 
+    .roadmap-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .roadmap-card summary {
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      list-style: none;
+    }
+
+    .roadmap-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .stage-list {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .stage-row {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--card-alt);
+      border-left: 3px solid var(--border);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .stage-row.stage-active {
+      border-left-color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .stage-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .stage-sub {
+      color: var(--muted);
+    }
+
     .deck-list {
       display: grid;
       gap: 12px;
@@ -263,12 +316,41 @@
     <div class="summary-card">
       <div class="summary-top">
         <span class="summary-label">🎯 整體熟練度</span>
-        <span id="total-progress" class="summary-num">0 / 40 題（0%）</span>
+        <span id="total-progress" class="summary-num">0 / 46 題（0%）</span>
       </div>
       <div class="progress-track">
         <div id="total-bar" class="progress-fill"></div>
       </div>
     </div>
+
+    <details class="roadmap-card" open>
+      <summary>
+        <span>🗺️ 五階段學習路線圖（一個小專案主線）</span>
+        <span style="font-size:12px;color:var(--muted);font-weight:600;">展開 / 收合</span>
+      </summary>
+      <div class="stage-list">
+        <div class="stage-row stage-active">
+          <div class="stage-title">階段 1・改得動、看得懂（目前主線）</div>
+          <div class="stage-sub">Git 基礎 + UI／UX 觀察：用分支改手機學習流程，實測並消除猶豫點。</div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-title">階段 2・接得到資料</div>
+          <div class="stage-sub">HTTP / API + React：用 fetch 讀題庫，做出載入中、成功、空資料與錯誤畫面。</div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-title">階段 3・跑得起、查得到</div>
+          <div class="stage-sub">Git PR + 部署 + Docker + 日誌：啟動題庫 API 並從日誌排查啟動失敗。</div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-title">階段 4・看得懂系統邊界</div>
+          <div class="stage-sub">模組化與微服務：比較單體與拆成「讀題庫／存進度」兩服務的故障影響與代價。</div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-title">階段 5・用得好 AI 工具</div>
+          <div class="stage-sub">AI 協作、工具調用、MCP 與結果驗證：讓 AI 找矛盾並用測試確認，實作唯讀 MCP。</div>
+        </div>
+      </div>
+    </details>
 
     <div id="deck-list" class="deck-list"></div>
 
@@ -282,22 +364,29 @@
     const THEME_KEY = "agy_study_theme_v1";
     const DECKS = [
       {
-        title: "🔌 MCP 架構與使用",
-        desc: "Host / Client / Server 三層、Tools / Resources / Prompts、stdio 與安全治理邊界",
-        href: "mcp_mobile_study.html",
-        storageKey: "agy_mcp_flashcards_v1",
-        total: 10,
-        accent: "#2563eb"
-      },
-      {
+        stage: "階段 1",
         title: "🌿 Git 工作流程",
         desc: "核心四區流向、Feature Branch + PR 協作、Merge vs Rebase、Reset / Revert / Reflog 急救",
         href: "git_mobile_study.html",
         storageKey: "agy_git_flashcards_v1",
+        unitStorageKey: "agy_git_units_v1",
+        unitTotal: 4,
         total: 10,
         accent: "#ea580c"
       },
       {
+        stage: "階段 1",
+        title: "🎨 UI／UX 基礎實戰",
+        desc: "手機動線觀察、辨識猶豫點、主按鈕層級與防呆設計，用實機驗證最小改進",
+        href: "ux_mobile_study.html",
+        storageKey: "agy_ux_flashcards_v1",
+        unitStorageKey: "agy_ux_units_v1",
+        unitTotal: 1,
+        total: 6,
+        accent: "#7c3aed"
+      },
+      {
+        stage: "階段 2",
         title: "🌐 API 請求與回應流程",
         desc: "HTTP 生命週期、RESTful 與狀態碼（401 vs 403）、JWT 驗證、CORS 預檢與 Network/cURL 除錯",
         href: "api_mobile_study.html",
@@ -306,12 +395,22 @@
         accent: "#0d9488"
       },
       {
+        stage: "階段 2",
         title: "⚛️ React 渲染與開發流程",
         desc: "Trigger → Render → Commit、單向資料流、Immutable State、useEffect 清理與 API 防競態",
         href: "react_mobile_study.html",
         storageKey: "agy_react_flashcards_v1",
         total: 10,
         accent: "#0284c7"
+      },
+      {
+        stage: "階段 5",
+        title: "🔌 MCP 架構與使用",
+        desc: "Host / Client / Server 三層、Tools / Resources / Prompts、stdio 與安全治理邊界",
+        href: "mcp_mobile_study.html",
+        storageKey: "agy_mcp_flashcards_v1",
+        total: 10,
+        accent: "#2563eb"
       }
     ];
 
@@ -345,26 +444,43 @@
       }
     }
 
+    function readUnits(key) {
+      if (!key) return 0;
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return 0;
+        const map = JSON.parse(raw) || {};
+        return Object.values(map).filter(Boolean).length;
+      } catch (_) {
+        return 0;
+      }
+    }
+
     function renderDecks() {
       let totalMastered = 0;
       let totalCards = 0;
 
       const html = DECKS.map(deck => {
         const { mastered, review } = readStats(deck.storageKey);
+        const unitsDone = readUnits(deck.unitStorageKey);
         totalMastered += mastered;
         totalCards += deck.total;
         const pct = Math.round((mastered / deck.total) * 100);
+        const unitPill = deck.unitTotal
+          ? `<span class="pill ${unitsDone > 0 ? 'pill-done' : ''}">學完 ${unitsDone} / ${deck.unitTotal} 單元</span>`
+          : "";
 
         return `
           <a class="deck-card" href="${deck.href}" style="--accent:${deck.accent};">
             <div class="deck-top">
-              <h2 class="deck-title">${deck.title}</h2>
+              <h2 class="deck-title"><span class="pill" style="margin-right:6px;font-size:11px;vertical-align:middle;">${deck.stage}</span>${deck.title}</h2>
               <span class="deck-arrow">開始練習 →</span>
             </div>
             <p class="deck-desc">${deck.desc}</p>
             <div class="deck-meta">
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <span class="pill ${mastered === deck.total ? 'pill-done' : ''}">已記住 ${mastered} / ${deck.total}</span>
+                ${unitPill}
+                <span class="pill ${mastered === deck.total ? 'pill-done' : ''}">已記住 ${mastered} / ${deck.total} 張卡</span>
                 ${review > 0 ? `<span class="pill pill-review">待複習 ${review}</span>` : ""}
               </div>
               <span style="color:var(--muted);">${pct}%</span>

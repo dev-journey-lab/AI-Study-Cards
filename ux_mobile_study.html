@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>UI／UX 基礎實戰 — 手機隨身學習冊</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #7c3aed;
+      --primary-fg: #ffffff;
+      --primary-soft: #ede9fe;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #d97706;
+      --warning-soft: #fef3c7;
+      --code-bg: #1e293b;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-alt: #334155;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #a78bfa;
+        --primary-fg: #0f172a;
+        --primary-soft: rgba(167, 139, 250, 0.2);
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.2);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.2);
+        --code-bg: #020617;
+        --code-fg: #e2e8f0;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #a78bfa;
+      --primary-fg: #0f172a;
+      --primary-soft: rgba(167, 139, 250, 0.2);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.2);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.2);
+      --code-bg: #020617;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 84px) 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .container { max-width: 600px; margin: 0 auto; }
+
+    .header {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 12px 0 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .back-btn {
+      text-decoration: none; background: var(--card); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 5px 9px; font-size: 13px; font-weight: 600; white-space: nowrap;
+    }
+    .title { font-size: 17px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .badge-progress {
+      font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+      background: var(--primary-soft); color: var(--primary); white-space: nowrap;
+    }
+    .icon-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      border-radius: 8px; padding: 6px 9px; font-size: 13px; cursor: pointer;
+    }
+
+    .tabs {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      background: var(--card-alt); padding: 4px; border-radius: 12px; margin-bottom: 12px;
+    }
+    .tab-btn {
+      border: none; background: transparent; color: var(--muted);
+      font-size: 14px; font-weight: 600; padding: 9px 4px; border-radius: 9px; cursor: pointer;
+    }
+    .tab-btn.active { background: var(--card); color: var(--primary); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); }
+
+    .cat-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; scrollbar-width: none; }
+    .cat-bar::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      white-space: nowrap; border: 1px solid var(--border); background: var(--card); color: var(--muted);
+      padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .cat-pill.active { border-color: var(--primary); background: var(--primary); color: var(--primary-fg); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px; box-shadow: var(--shadow); margin-bottom: 14px;
+    }
+    .card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+    .meta-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .q-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 700;
+      background: var(--primary-soft); color: var(--primary); padding: 3px 9px; border-radius: 6px;
+    }
+    .q-cat { font-size: 12px; color: var(--muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; }
+    .status-tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+    .status-mastered { background: var(--success-soft); color: var(--success); }
+    .status-review { background: var(--warning-soft); color: var(--warning); }
+
+    .question-text { font-size: 18px; font-weight: 700; line-height: 1.45; margin-bottom: 14px; }
+    .hint-box {
+      background: var(--card-alt); border-left: 3px solid var(--primary); padding: 10px 12px;
+      border-radius: 8px; font-size: 14px; color: var(--muted); margin-bottom: 14px;
+    }
+    .unit-goal {
+      background: var(--card-alt); border-left: 3px solid var(--primary);
+      padding: 10px 12px; border-radius: 8px; font-size: 14px; margin: 10px 0 0 0;
+    }
+    .reveal-box {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 26px 16px;
+      text-align: center; cursor: pointer; background: var(--card-alt);
+    }
+    .reveal-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+    .reveal-sub { font-size: 13px; color: var(--muted); }
+    .answer-box { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px; }
+    .answer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; font-size: 14px; font-weight: 700; color: var(--primary);
+    }
+    .answer-point { margin-bottom: 10px; font-size: 15px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; background: var(--card-alt); padding: 2px 5px; border-radius: 4px; }
+    pre.code-block {
+      background: var(--code-bg); color: var(--code-fg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px; line-height: 1.45; padding: 12px; border-radius: 10px; overflow-x: auto; margin: 10px 0 0 0;
+    }
+
+    .step-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+    .step-pill {
+      border: 1px solid var(--border); background: var(--card-alt); color: var(--muted);
+      font-size: 12px; font-weight: 700; padding: 6px 2px; border-radius: 8px; cursor: pointer; text-align: center;
+    }
+    .step-pill.active { background: var(--primary); border-color: var(--primary); color: var(--primary-fg); }
+    .step-pill.done { background: var(--success-soft); border-color: transparent; color: var(--success); }
+    .step-label { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .step-op { font-size: 17px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; }
+    .step-explain { margin-top: 12px; font-size: 15px; line-height: 1.55; }
+    .cmd-details {
+      margin-top: 12px; background: var(--card-alt); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 12px; font-size: 13px;
+    }
+    .cmd-details summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    .choice-list { display: grid; gap: 8px; margin-top: 12px; }
+    .choice-btn {
+      width: 100%; text-align: left; border: 1px solid var(--border); background: var(--card-alt); color: var(--text);
+      font-size: 14px; font-weight: 600; padding: 12px 14px; border-radius: 12px; cursor: pointer; line-height: 1.45;
+    }
+    .choice-btn.correct { background: var(--success-soft); border-color: var(--success); }
+    .choice-btn.wrong { background: var(--warning-soft); border-color: var(--warning); }
+    .feedback-box { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+    .feedback-ok { background: var(--success-soft); border: 1px solid var(--success); }
+    .feedback-warn { background: var(--warning-soft); border: 1px solid var(--warning); }
+    .step-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .grade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn {
+      border: 1px solid var(--border); background: var(--card); color: var(--text);
+      font-size: 15px; font-weight: 600; padding: 12px 10px; border-radius: 12px; cursor: pointer; text-align: center;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+    .btn-success { background: var(--success-soft); color: var(--success); border-color: transparent; }
+    .btn-warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
+
+    .list-item {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+    }
+    .list-q-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .list-q-title { font-size: 16px; font-weight: 700; margin-top: 6px; }
+    .hidden { display: none !important; }
+    .swipe-tip { text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← 目錄</a>
+        <h1 class="title">🎨 UI／UX 實戰練習</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-badge" class="badge-progress">已記住 0 / 6</span>
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
+        <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-unit" class="tab-btn active" onclick="switchMode('unit')">📖 單元練習</button>
+      <button id="tab-flashcard" class="tab-btn" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
+    </div>
+
+    <div id="cat-bar" class="cat-bar hidden">
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (6)</button>
+      <button id="cat-obs" class="cat-pill" onclick="setCategory('obs')">觀察與動線 (3)</button>
+      <button id="cat-ui" class="cat-pill" onclick="setCategory('ui')">介面回饋與防呆 (3)</button>
+      <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
+    </div>
+
+    <!-- VIEW 0: UX Unit 1 -->
+    <div id="view-unit">
+      <div class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span class="q-num">階段 1・UI／UX 練習</span>
+            <span class="q-cat">介面觀察・5 分鐘</span>
+            <span id="ux-u1-status" class="status-tag hidden"></span>
+          </div>
+          <span id="ux-unit-badge" class="q-cat">學完 0 / 1 單元</span>
+        </div>
+        <div class="question-text" style="margin-bottom:6px;">用手機找到單元並完成驗收</div>
+        <div class="unit-goal">
+          <b>學完要會做什麼：</b>請一位使用者（或自己切換新手視角）從首頁找到 Git 第一單元並完成驗收，能記錄「在哪一步猶豫」並提出最小改進。
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="ux-step-pills" class="step-pills"></div>
+        <div id="ux-body"></div>
+        <div class="step-nav">
+          <button id="btn-ux-prev" class="btn" onclick="prevUxStep()">← 上一步</button>
+          <button id="btn-ux-next" class="btn btn-primary" onclick="nextUxStep()">下一步 →</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">📝 階段實作核對清單（現版實機觀察交件）</div>
+        <div class="answer-point">• <b>實測任務</b>：拿手機開現版首頁，計時從「進首頁」到「完成 Git 第一單元驗收」花幾秒。</div>
+        <div class="answer-point">• <b>交出紀錄</b>：如實記錄現版真正觀察到的行為——若有猶豫點，寫下畫面位置、預期與 1 個最小改動；若過程順利、沒有明顯停頓，也如實記錄耗時與讓動線順暢的原因（不必硬湊問題）。</div>
+      </div>
+    </div>
+
+    <!-- VIEW 1: Flashcards -->
+    <div id="view-flashcard" class="hidden">
+      <div id="touch-card" class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span id="c-index" class="q-num">Q1 (1/6)</span>
+            <span id="c-cat" class="q-cat">觀察與動線</span>
+            <span id="c-status" class="status-tag hidden"></span>
+          </div>
+          <button id="btn-hint" class="icon-btn" onclick="toggleHint()">💡 提示</button>
+        </div>
+        <div id="c-question" class="question-text"></div>
+        <div id="c-hint" class="hint-box hidden"></div>
+        <div id="c-reveal" class="reveal-box" onclick="toggleAnswer()">
+          <div class="reveal-title">🔒 答案已隱藏（先在腦中回想）</div>
+          <div class="reveal-sub">點一下這裡打開答案</div>
+        </div>
+        <div id="c-answer" class="answer-box hidden">
+          <div class="answer-header">
+            <span>✓ 標準解析與記憶重點</span>
+            <span onclick="toggleAnswer()" style="color:var(--muted);font-weight:500;text-decoration:underline;cursor:pointer;">收起答案</span>
+          </div>
+          <div id="c-answer-points"></div>
+          <pre id="c-code" class="code-block hidden"></pre>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="btn" onclick="prevCard()">← 上一題</button>
+        <button id="btn-main-toggle" class="btn btn-primary" onclick="toggleAnswer()">👁 打開答案</button>
+        <button class="btn" onclick="nextCard()">下一題 →</button>
+      </div>
+      <div class="grade-grid">
+        <button class="btn btn-warning" onclick="markStatus('review')">↻ 待複習</button>
+        <button class="btn btn-success" onclick="markStatus('mastered')">✓ 已記住（下一題）</button>
+      </div>
+      <div class="swipe-tip">💡 支援手機左右滑動換題・進度自動儲存於瀏覽器</div>
+    </div>
+
+    <!-- VIEW 2: List -->
+    <div id="view-list" class="hidden">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+        <button class="icon-btn" onclick="toggleAllList(false)">🙈 全部隱藏</button>
+        <button class="icon-btn" onclick="toggleAllList(true)">👁 全部打開</button>
+      </div>
+      <div id="list-container"></div>
+    </div>
+  </div>
+
+  <script>
+    const CARDS = [
+      {
+        id: 1,
+        cat: "obs",
+        catName: "觀察與動線",
+        q: "請別人測試你的網頁動線時，為什麼「只給任務目標、不給口頭提示」最重要？",
+        hint: "想想看真正的使用者打開你的網站時，你會在旁邊指點他點哪裡嗎？",
+        ans: [
+          "• <b>真實使用者身邊沒有作者</b>：一旦你忍不住提示「點上面第二個分頁」，就再也測不出介面本身是否夠直覺。",
+          "• <b>正確做法</b>：只說任務（「請從首頁找到 Git 第一單元並完成驗收」），靜靜記錄他在哪個畫面停頓超過 3 秒。"
+        ],
+        code: "✓ 好問法：請你找出 Git 第一單元並完成驗收，過程中可以把心裡想的唸出來。\n✗ 壞問法：你先點綠色那張卡片，再點最左邊的分頁。"
+      },
+      {
+        id: 2,
+        cat: "obs",
+        catName: "觀察與動線",
+        q: "測試時發現使用者沒看到說明文字，應該怪「使用者不看字」還是改介面？怎麼判斷原因？",
+        hint: "在手機小螢幕上，使用者通常是「掃描按鈕與標題」，而不是從頭逐字閱讀。",
+        ans: [
+          "• <b>永遠先檢視介面線索</b>：手機閱讀習慣是掃描（Scanning），若關鍵提示長得跟一般段落一樣，極容易被略過。",
+          "• <b>改善方向</b>：把關鍵前提放在動作正上方（例如步驟 4 的情境切換框），並用標題或色塊拉出視覺層級。"
+        ],
+        code: "現象：使用者沒注意到步驟 4 換情境\n根因：說明混在普通段落裡\n解法：在題目正上方加上「🔄 情境切換」提示框"
+      },
+      {
+        id: 3,
+        cat: "obs",
+        catName: "觀察與動線",
+        q: "記錄易用性測試（Usability Testing）時，哪 3 個具體欄位最能幫你決定怎麼改版？",
+        hint: "位置、預期與現實的落差、以及最小修正假設。",
+        ans: [
+          "• <b>1. 卡住位置</b>：哪一頁、哪一步停頓最久或點錯位置。",
+          "• <b>2. 使用者預期</b>：他當時「以為點這裡會發生什麼」或「以為目前系統狀態是什麼」。",
+          "• <b>3. 最小改動假設</b>：改動哪一句文案或哪一顆按鈕，就能消除這個落差（下次測試再驗證）。"
+        ],
+        code: "觀察紀錄表：\n[畫面] Git 步驟 5\n[現象] 還沒答題就直接點底部按鈕跳走\n[改法] 步驟 5 隱藏底部重複跳轉鍵，答對後才顯示複習按鈕"
+      },
+      {
+        id: 4,
+        cat: "ui",
+        catName: "介面回饋與防呆",
+        q: "手機畫面上如果同時放兩顆一樣醒目的主按鈕（Primary CTA），會造成什麼問題？",
+        hint: "一個畫面應該只有一個最明確的「下一步」。",
+        ans: [
+          "• <b>決策猶豫與誤跳</b>：兩顆主色按鈕會互相搶焦點，讓使用者不知道該先完成當前任務還是直接離開。",
+          "• <b>設計原則</b>：每個畫面只留 <b>1 個主要動作（Primary）</b>，次要動作降級為外框按鈕，或等前置條件完成後再出現。"
+        ],
+        code: "主要動作（實心主色）= 這一步最希望使用者做的事\n次要動作（淺底外框）= 返回、上一步、展開參考"
+      },
+      {
+        id: 5,
+        cat: "ui",
+        catName: "介面回饋與防呆",
+        q: "為什麼「重置進度」這類破壞性操作在手機上一定要加防呆確認？",
+        hint: "手機觸控面積小，拇指滑動時很容易誤觸右上角按鈕。",
+        ans: [
+          "• <b>防誤觸成本</b>：辛苦累積的 40 題進度若因手滑一下全部歸零，會造成極大挫敗感。",
+          "• <b>防呆做法</b>：加上明確的確認視窗（或提供復原 Undo），並避免把危險按鈕放在最常點擊的熱區旁邊。"
+        ],
+        code: "if (!confirm('確定要重置進度嗎？')) return;"
+      },
+      {
+        id: 6,
+        cat: "ui",
+        catName: "介面回饋與防呆",
+        q: "進度設計時，為什麼要把「學完單元」和「已記住題卡」分開顯示，而不是混成同一個百分比？",
+        hint: "「聽懂概念通過驗收」與「事後能主動回想背起來」是兩件不同的學習里程碑。",
+        ans: [
+          "• <b>語意清晰</b>：「學完 1 / 4 單元」代表完成引導與隨堂驗收；「已記住 3 / 10 張卡」代表能脫離提示主動回想。",
+          "• <b>行動明確</b>：回到首頁一眼就知道「該繼續學下一單元」還是「該回頭複習還沒記住的題卡」。"
+        ],
+        code: "首頁雙指標：\n[學完 1 / 4 單元] -> 單元理解進度\n[已記住 3 / 10 張卡] -> 主動回想熟練度"
+      }
+    ];
+
+    const STORAGE_KEY = "agy_ux_flashcards_v1";
+    const UNIT_STORAGE_KEY = "agy_ux_units_v1";
+    const THEME_KEY = "agy_study_theme_v1";
+
+    let statusMap = {};
+    let unitMap = {};
+    let listOpenMap = {};
+    let currentMode = "unit";
+    let currentCat = "all";
+    let currentIdx = 0;
+    let showAns = false;
+    let showHint = false;
+    let uxStep = 0;
+    let uxPred = null;
+    let uxQuiz = null;
+
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) statusMap = JSON.parse(saved) || {};
+      const savedUnits = localStorage.getItem(UNIT_STORAGE_KEY);
+      if (savedUnits) unitMap = JSON.parse(savedUnits) || {};
+    } catch (_) {}
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function readJsonMap(key) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+    function saveCardStatus(cardId, state) {
+      const latest = readJsonMap(STORAGE_KEY);
+      latest[cardId] = state;
+      statusMap = latest;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap)); } catch (_) {}
+    }
+    function saveUnitDone(unitId) {
+      const latest = readJsonMap(UNIT_STORAGE_KEY);
+      latest[unitId] = true;
+      unitMap = latest;
+      try { localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap)); } catch (_) {}
+    }
+
+    function getFiltered() {
+      if (currentCat === "all") return CARDS;
+      if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
+      return CARDS.filter(c => c.cat === currentCat);
+    }
+
+    function updateBadges() {
+      const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
+      const review = Object.values(statusMap).filter(v => v === "review").length;
+      const unitsDone = Object.values(unitMap).filter(Boolean).length;
+      document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
+      document.getElementById("cat-review").textContent = `待複習 (${review})`;
+      document.getElementById("ux-unit-badge").textContent = `學完 ${unitsDone} / 1 單元`;
+      const st = document.getElementById("ux-u1-status");
+      if (unitMap.unit1) {
+        st.textContent = "✓ 已完成";
+        st.className = "status-tag status-mastered";
+      } else {
+        st.className = "status-tag hidden";
+      }
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      ["unit", "flashcard", "list"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
+      });
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "unit");
+      if (mode === "unit") renderUxUnit();
+      if (mode === "flashcard") renderCard();
+      if (mode === "list") renderList();
+    }
+
+    function setCategory(cat) {
+      currentCat = cat;
+      currentIdx = 0;
+      showAns = false;
+      showHint = false;
+      ["all", "obs", "ui", "review"].forEach(c => {
+        document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
+      });
+      if (currentMode === "flashcard") renderCard();
+      if (currentMode === "list") renderList();
+    }
+
+    function reviewUxCards() {
+      switchMode("flashcard");
+      setCategory("all");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setUxStep(idx) { uxStep = Math.max(0, Math.min(4, idx)); renderUxUnit(); }
+    function prevUxStep() { if (uxStep > 0) setUxStep(uxStep - 1); }
+    function nextUxStep() { if (uxStep < 4) setUxStep(uxStep + 1); }
+    function pickUxPred(c) { uxPred = c; renderUxUnit(); }
+    function pickUxQuiz(c) {
+      uxQuiz = c;
+      if (c === 1) { saveUnitDone("unit1"); }
+      renderUxUnit();
+    }
+
+    function renderUxUnit() {
+      updateBadges();
+      const labels = ["1. 設任務", "2. 看停頓", "3. 找根因", "4. 卡點預測", "5. 驗收題"];
+      document.getElementById("ux-step-pills").innerHTML = labels.map((lb, i) => {
+        const cls = i === uxStep ? "step-pill active" : (i === 4 && unitMap.unit1) ? "step-pill done" : "step-pill";
+        return `<button class="${cls}" onclick="setUxStep(${i})">${lb}</button>`;
+      }).join("");
+
+      const body = document.getElementById("ux-body");
+      if (uxStep === 0) {
+        body.innerHTML = `
+          <div class="step-label">步驟 1 / 5・設定觀察任務</div>
+          <div class="step-op">只給一句目標，不給任何操作提示</div>
+          <pre class="code-block">任務：「請用手機從首頁找到 Git 第一單元，並完成最後的驗收題。」
+規則：過程中不插嘴、不幫點，只請對方把心裡想法唸出來。</pre>
+          <div class="step-explain">只要你一開口說「點那張橘色卡片」，就看不到介面原本哪裡不夠清楚。</div>
+        `;
+      } else if (uxStep === 1) {
+        body.innerHTML = `
+          <div class="step-label">步驟 2 / 5・記錄猶豫與停頓</div>
+          <div class="step-op">重點觀察「超過 3 秒沒動」或「點錯位置」的三個瞬間</div>
+          <pre class="code-block">檢查點 1：首頁 → 找得到 Git 入口嗎？
+檢查點 2：Git 頁 → 知道「單元教學」在哪裡開始嗎？
+檢查點 3：驗收後 → 看得懂進度有沒有成功記錄嗎？</pre>
+          <div class="step-explain">不要只問「好不好用」，要記下具體在哪一步猶豫、當下猶豫的原因。</div>
+        `;
+      } else if (uxStep === 2) {
+        body.innerHTML = `
+          <div class="step-label">步驟 3 / 5・區分現象與根因（修正前的模擬案例）</div>
+          <div class="step-op">把「使用者沒看到」轉譯成「介面缺少什麼線索」</div>
+          <pre class="code-block">【修正前模擬案例】
+表面現象：使用者在步驟 5 還沒作答就點底部跳走
+根因分析：底部出現了重複的主色按鈕，搶走答題焦點
+最小改動：步驟 5 隱藏底部跳轉鈕，答對後才顯示複習鈕</pre>
+          <div class="step-explain">好的 UI 修正不是多寫一大段說明文字，而是讓「正確的下一步」自然顯眼（這處問題在現版 Git 頁已修正）。</div>
+        `;
+      } else if (uxStep === 3) {
+        const predHtml = uxPred !== null ? `
+          <div class="feedback-box ${uxPred === 0 ? "feedback-ok" : "feedback-warn"}">
+            <b>${uxPred === 0 ? "✓ 判斷準確！" : "↻ 實測中很常出現反效果！"}</b>
+            手機螢幕小、使用者習慣快速掃描主色按鈕；當「作答」和「跳去複習」同時搶眼時，使用者很容易直接略過驗收，也搞不清自己到底有沒有完成單元。
+          </div>
+        ` : "";
+        body.innerHTML = `
+          <div class="step-label">步驟 4 / 5・常見卡點預測（修正前的模擬案例）</div>
+          <div class="step-op">假設在修正前的步驟 5 驗收頁，底部同時放了一顆醒目的「複習 Q1～Q3 →」按鈕，新手最可能發生什麼事？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${uxPred === 0 ? "correct" : ""}" onclick="pickUxPred(0)">A. 沒作答或答錯就直接點底部跳走，誤以為已完成單元</button>
+            <button class="choice-btn ${uxPred === 1 ? "wrong" : ""}" onclick="pickUxPred(1)">B. 會更仔細把三個選項都讀完再慢慢決定</button>
+          </div>
+          ${predHtml}
+        `;
+      } else {
+        const showPassed = uxQuiz === 1 || (uxQuiz === null && unitMap.unit1);
+        const fb = showPassed ? `
+          <div class="feedback-box feedback-ok">
+            <b>✓ ${uxQuiz === 1 ? "答對了！已完成 UI／UX 小練習" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
+            根因是「步驟 3 已提交，但步驟 4 沒提示回到步驟 2 的暫存狀態」。直接在步驟 4 題目前加上情境切換提示，就能在不增加閱讀負擔的情況下消除誤解（現版 Git 頁已套用此修正）。
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary" style="width:100%;" onclick="reviewUxCards()">👉 複習 UI／UX 基礎題卡（6 題）</button>
+            </div>
+          </div>
+        ` : uxQuiz !== null ? `
+          <div class="feedback-box feedback-warn">
+            <b>再想一下「對症下藥」：</b>使用者卡住是因為上下文狀態切換沒講清楚，哪一個改法最直接消除這個誤解？
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          <div class="step-label">步驟 5 / 5・單元驗收（修正前的模擬案例）</div>
+          <div class="step-op">【修正前模擬案例】你觀察到 3 位測試者中有 2 位在舊版 Git 步驟 4 停頓超過 15 秒，嘴裡說「剛才步驟 3 不是已經 commit 了嗎？怎麼還有暫存？」哪個改法最對症下藥？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${uxQuiz === 0 ? "wrong" : ""}" onclick="pickUxQuiz(0)">A. 把步驟 4 的字體放大兩倍並加粗紅字警告</button>
+            <button class="choice-btn ${uxQuiz === 1 ? "correct" : ""}" onclick="pickUxQuiz(1)">B. 在步驟 4 開頭補一句「回到步驟 2，先暫存第 1 版（尚未 commit）再修改」的情境切換提示</button>
+            <button class="choice-btn ${uxQuiz === 2 ? "wrong" : ""}" onclick="pickUxQuiz(2)">C. 把整個步驟 4 刪掉，避免使用者覺得複雜</button>
+          </div>
+          ${fb}
+        `;
+      }
+
+      const prevBtn = document.getElementById("btn-ux-prev");
+      const nextBtn = document.getElementById("btn-ux-next");
+      prevBtn.disabled = uxStep === 0;
+      prevBtn.style.opacity = uxStep === 0 ? "0.45" : "1";
+      prevBtn.style.gridColumn = uxStep === 4 ? "1 / -1" : "";
+      nextBtn.classList.toggle("hidden", uxStep === 4);
+    }
+
+    function renderCard() {
+      const list = getFiltered();
+      updateBadges();
+      if (list.length === 0) {
+        document.getElementById("c-index").textContent = "0 / 0";
+        document.getElementById("c-cat").textContent = "無題目";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (6)」繼續練習。";
+        document.getElementById("c-hint").classList.add("hidden");
+        document.getElementById("c-reveal").classList.add("hidden");
+        document.getElementById("c-answer").classList.add("hidden");
+        document.getElementById("c-status").classList.add("hidden");
+        return;
+      }
+      if (currentIdx >= list.length) currentIdx = 0;
+      if (currentIdx < 0) currentIdx = list.length - 1;
+      const card = list[currentIdx];
+      document.getElementById("c-index").textContent = `Q${card.id} (${currentIdx + 1}/${list.length})`;
+      document.getElementById("c-cat").textContent = card.catName;
+      document.getElementById("c-question").textContent = card.q;
+      const stEl = document.getElementById("c-status");
+      const st = statusMap[card.id];
+      if (st === "mastered") { stEl.textContent = "✓ 已記住"; stEl.className = "status-tag status-mastered"; }
+      else if (st === "review") { stEl.textContent = "↻ 待複習"; stEl.className = "status-tag status-review"; }
+      else { stEl.className = "status-tag hidden"; }
+      const hintEl = document.getElementById("c-hint");
+      hintEl.textContent = `💡 提示：${card.hint}`;
+      hintEl.classList.toggle("hidden", !showHint);
+      document.getElementById("c-answer-points").innerHTML = card.ans.map(line => `<div class="answer-point">${line}</div>`).join("");
+      const codeEl = document.getElementById("c-code");
+      if (card.code) { codeEl.textContent = card.code; codeEl.classList.remove("hidden"); }
+      else { codeEl.classList.add("hidden"); }
+      document.getElementById("c-reveal").classList.toggle("hidden", showAns);
+      document.getElementById("c-answer").classList.toggle("hidden", !showAns);
+      document.getElementById("btn-main-toggle").textContent = showAns ? "🙈 隱藏答案" : "👁 打開答案";
+    }
+
+    function toggleAnswer() { if (!getFiltered().length) return; showAns = !showAns; renderCard(); }
+    function toggleHint() { if (!getFiltered().length) return; showHint = !showHint; renderCard(); }
+    function nextCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx + 1) % l.length; showAns = false; showHint = false; renderCard(); }
+    function prevCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx - 1 + l.length) % l.length; showAns = false; showHint = false; renderCard(); }
+    function markStatus(state) {
+      const l = getFiltered(); if (!l.length) return;
+      saveCardStatus(l[currentIdx].id, state); updateBadges();
+      if (state === "mastered") nextCard(); else renderCard();
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const box = document.getElementById("list-container");
+      updateBadges();
+      if (!list.length) { box.innerHTML = `<div class="card">目前此分類沒有題目。</div>`; return; }
+      box.innerHTML = list.map(card => {
+        const open = !!listOpenMap[card.id];
+        const st = statusMap[card.id];
+        const stBadge = st === "mastered" ? `<span class="status-tag status-mastered">✓ 已記住</span>`
+          : st === "review" ? `<span class="status-tag status-review">↻ 待複習</span>` : "";
+        return `
+          <div class="list-item">
+            <div class="list-q-row" onclick="toggleListOne(${card.id})">
+              <div>
+                <div class="meta-left">
+                  <span class="q-num">Q${card.id}</span>
+                  <span class="q-cat">${card.catName}</span>
+                  ${stBadge}
+                </div>
+                <div class="list-q-title">${escapeHtml(card.q)}</div>
+              </div>
+              <button class="icon-btn" style="flex-shrink:0;white-space:nowrap;">${open ? "🙈 收起" : "👁 答案"}</button>
+            </div>
+            ${open ? `
+              <div class="answer-box">
+                <div class="hint-box">💡 提示：${escapeHtml(card.hint)}</div>
+                ${card.ans.map(line => `<div class="answer-point">${line}</div>`).join("")}
+                ${card.code ? `<pre class="code-block">${escapeHtml(card.code)}</pre>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+    function toggleListOne(id) { listOpenMap[id] = !listOpenMap[id]; renderList(); }
+    function toggleAllList(openState) { CARDS.forEach(c => { listOpenMap[c.id] = openState; }); renderList(); }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const cur = root.getAttribute("data-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const next = (cur ? cur === "dark" : prefersDark) ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+    }
+
+    function resetAll() {
+      if (!confirm("確定要重置「UI／UX 實戰」的單元與題卡進度嗎？")) return;
+      statusMap = {}; unitMap = {}; listOpenMap = {};
+      showAns = false; showHint = false; currentIdx = 0; uxStep = 0; uxPred = null; uxQuiz = null;
+      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UNIT_STORAGE_KEY); } catch (_) {}
+      setCategory("all");
+      if (currentMode === "unit") renderUxUnit();
+    }
+
+    let touchStartX = 0, touchStartY = 0;
+    const touchCard = document.getElementById("touch-card");
+    touchCard.addEventListener("touchstart", e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: true });
+    touchCard.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) nextCard(); else prevCard(); }
+    }, { passive: true });
+
+    renderUxUnit();
+    renderCard();
+  </script>
+</body>
+</html>
