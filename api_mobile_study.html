@@ -620,7 +620,7 @@
         cat: "rest",
         catName: "REST 與狀態碼",
         q: "401 Unauthorized 與 403 Forbidden 的本質差別是什麼？前端收到後該怎麼處理？",
-        hint: "一個是「你還沒證明你是誰」，一個是「我知道你是誰，但你等級不夠」。",
+        hint: "401：缺少有效的身分憑證；403：伺服器理解請求，但拒絕處理。",
         ans: [
           "• <b><code>401 Unauthorized</code>（未認證 / Authentication 失敗）</b>：沒帶 Token、Token 過期或無效 → 系統不知道你是誰。<b>處理方式</b>：導回登入頁或自動 Refresh Token。",
           "• <b><code>403 Forbidden</code>（禁止存取 / RFC 9110）</b>：伺服器理解請求，但<b>拒絕處理</b>（常見例子：已登入但角色權限不足，無法存取管理員資源）。<b>處理方式</b>：提示「無存取權限」，單純重新登入通常無效。"

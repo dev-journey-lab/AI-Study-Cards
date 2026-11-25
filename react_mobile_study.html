@@ -634,9 +634,9 @@
         hint: "使用者快速切換分類 A → B，如果 A 的回應比 B 晚回來蓋掉畫面怎麼辦？",
         ans: [
           "• <b>三態管理</b>：維護 <code>data</code>、<code>loading</code>、<code>error</code> 三個狀態，讓畫面在載入中、失敗與成功時都有清楚回饋。",
-          "• <b>防競態條件</b>：在 Cleanup 中使用 <b><code>AbortController</code></b>（或 <code>let ignore = false</code> 旗標）取消／忽略過時的舊請求；且 <code>.finally()</code> 中須先判斷 <code>!ctrl.signal.aborted</code>，避免舊請求被取消時提早把新請求的 <code>loading</code> 關掉。"
+          "• <b>防競態條件</b>：在 Cleanup 中使用 <b><code>AbortController</code></b>（或 <code>let ignore = false</code> 旗標）取消／忽略過時的舊請求；且在 <code>setCards</code>、<code>setError</code> 與 <code>.finally()</code> 更新狀態前皆須先檢查 <code>!ctrl.signal.aborted</code>，避免已排隊的舊回呼覆蓋新資料或提早關掉 <code>loading</code>。"
         ],
-        code: "useEffect(() => {\n  const ctrl = new AbortController();\n  setLoading(true);\n  fetch(`/api/cards?topic=${topic}`, { signal: ctrl.signal })\n    .then(r => r.json())\n    .then(data => setCards(data))\n    .catch(err => { if (err.name !== 'AbortError') setError(err); })\n    .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });\n  return () => ctrl.abort(); // 切換 topic 時取消舊請求\n}, [topic]);"
+        code: "useEffect(() => {\n  const ctrl = new AbortController();\n  setLoading(true);\n  fetch(`/api/cards?topic=${topic}`, { signal: ctrl.signal })\n    .then(r => r.json())\n    .then(data => { if (!ctrl.signal.aborted) setCards(data); })\n    .catch(err => { if (!ctrl.signal.aborted) setError(err); })\n    .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });\n  return () => ctrl.abort(); // 切換 topic 時取消舊請求\n}, [topic]);"
       },
       {
         id: 8,
