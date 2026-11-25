@@ -942,18 +942,29 @@
         .replace(/>/g, "&gt;");
     }
 
-    function saveProgress() {
+    function readJsonMap(key) {
       try {
-        const latest = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
-        statusMap = { ...latest, ...statusMap };
+        const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function saveCardStatus(cardId, state) {
+      const latest = readJsonMap(STORAGE_KEY);
+      latest[cardId] = state;
+      statusMap = latest;
+      try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
       } catch (_) {}
     }
 
     function saveUnitDone(unitId) {
+      const latest = readJsonMap(UNIT_STORAGE_KEY);
+      latest[unitId] = true;
+      unitMap = latest;
       try {
-        const latest = JSON.parse(localStorage.getItem(UNIT_STORAGE_KEY) || "{}") || {};
-        unitMap = { ...latest, ...unitMap, [unitId]: true };
         localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap));
       } catch (_) {}
     }
@@ -1426,8 +1437,7 @@ Your branch is behind 'origin/main' by 2 commits.</pre>
       const list = getFiltered();
       if (list.length === 0) return;
       const card = list[currentIdx];
-      statusMap[card.id] = state;
-      saveProgress();
+      saveCardStatus(card.id, state);
       updateBadges();
       if (state === "mastered") {
         nextCard();

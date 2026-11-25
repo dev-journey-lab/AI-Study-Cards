@@ -423,19 +423,25 @@
       return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
-    function saveProgress() {
+    function readJsonMap(key) {
       try {
-        const latest = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") || {};
-        statusMap = { ...latest, ...statusMap };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
-      } catch (_) {}
+        const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+    function saveCardStatus(cardId, state) {
+      const latest = readJsonMap(STORAGE_KEY);
+      latest[cardId] = state;
+      statusMap = latest;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap)); } catch (_) {}
     }
     function saveUnitDone(unitId) {
-      try {
-        const latest = JSON.parse(localStorage.getItem(UNIT_STORAGE_KEY) || "{}") || {};
-        unitMap = { ...latest, ...unitMap, [unitId]: true };
-        localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap));
-      } catch (_) {}
+      const latest = readJsonMap(UNIT_STORAGE_KEY);
+      latest[unitId] = true;
+      unitMap = latest;
+      try { localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap)); } catch (_) {}
     }
 
     function getFiltered() {
@@ -630,7 +636,7 @@
     function prevCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx - 1 + l.length) % l.length; showAns = false; showHint = false; renderCard(); }
     function markStatus(state) {
       const l = getFiltered(); if (!l.length) return;
-      statusMap[l[currentIdx].id] = state; saveProgress(); updateBadges();
+      saveCardStatus(l[currentIdx].id, state); updateBadges();
       if (state === "mastered") nextCard(); else renderCard();
     }
 
