@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>API 請求與回應流程 — 手機隨身記憶卡</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #0d9488;
+      --primary-fg: #ffffff;
+      --primary-soft: #ccfbf1;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #d97706;
+      --warning-soft: #fef3c7;
+      --code-bg: #1e293b;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-alt: #334155;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #14b8a6;
+        --primary-fg: #ffffff;
+        --primary-soft: rgba(20, 184, 166, 0.2);
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.2);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.2);
+        --code-bg: #020617;
+        --code-fg: #e2e8f0;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #14b8a6;
+      --primary-fg: #ffffff;
+      --primary-soft: rgba(20, 184, 166, 0.2);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.2);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.2);
+      --code-bg: #020617;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 84px) 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 0 10px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .back-btn {
+      text-decoration: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .title {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .badge-progress {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 9px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: var(--card-alt);
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 9px 4px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--card);
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .cat-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+    }
+    .cat-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-pill {
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .cat-pill.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: var(--primary-fg);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .meta-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .q-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 3px 9px;
+      border-radius: 6px;
+    }
+
+    .q-cat {
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .status-tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .status-mastered {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+    .status-review {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .question-text {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .hint-box {
+      background: var(--card-alt);
+      border-left: 3px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .reveal-box {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 26px 16px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--card-alt);
+      transition: border-color 0.15s;
+    }
+
+    .reveal-box:active {
+      border-color: var(--primary);
+    }
+
+    .reveal-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .reveal-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .answer-box {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      margin-top: 8px;
+    }
+
+    .answer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .answer-point {
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.9em;
+      background: var(--card-alt);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    pre.code-block {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      padding: 12px;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 10px 0 0 0;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .grade-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-fg);
+      border-color: var(--primary);
+    }
+
+    .btn-success {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: transparent;
+    }
+
+    .btn-warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-color: transparent;
+    }
+
+    .list-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .list-q-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .list-q-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .swipe-tip {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← 目錄</a>
+        <h1 class="title">🌐 API 流程記憶卡</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-badge" class="badge-progress">已記住 0 / 10</span>
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
+        <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-flashcard" class="tab-btn active" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
+      <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 流程總覽</button>
+    </div>
+
+    <div id="cat-bar" class="cat-bar">
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (10)</button>
+      <button id="cat-http" class="cat-pill" onclick="setCategory('http')">請求與回應 (4)</button>
+      <button id="cat-rest" class="cat-pill" onclick="setCategory('rest')">REST 與狀態碼 (3)</button>
+      <button id="cat-auth" class="cat-pill" onclick="setCategory('auth')">驗證與除錯 (3)</button>
+      <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
+    </div>
+
+    <div id="view-flashcard">
+      <div id="touch-card" class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span id="c-index" class="q-num">Q1 (1/10)</span>
+            <span id="c-cat" class="q-cat">請求與回應</span>
+            <span id="c-status" class="status-tag hidden"></span>
+          </div>
+          <button id="btn-hint" class="icon-btn" onclick="toggleHint()">💡 提示</button>
+        </div>
+
+        <div id="c-question" class="question-text"></div>
+        <div id="c-hint" class="hint-box hidden"></div>
+
+        <div id="c-reveal" class="reveal-box" onclick="toggleAnswer()">
+          <div class="reveal-title">🔒 答案已隱藏（先在腦中回想）</div>
+          <div class="reveal-sub">點一下這裡打開答案</div>
+        </div>
+
+        <div id="c-answer" class="answer-box hidden">
+          <div class="answer-header">
+            <span>✓ 標準解析與記憶重點</span>
+            <span onclick="toggleAnswer()" style="color:var(--muted);font-weight:500;text-decoration:underline;cursor:pointer;">收起答案</span>
+          </div>
+          <div id="c-answer-points"></div>
+          <pre id="c-code" class="code-block hidden"></pre>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="btn" onclick="prevCard()">← 上一題</button>
+        <button id="btn-main-toggle" class="btn btn-primary" onclick="toggleAnswer()">👁 打開答案</button>
+        <button class="btn" onclick="nextCard()">下一題 →</button>
+      </div>
+
+      <div class="grade-grid">
+        <button class="btn btn-warning" onclick="markStatus('review')">↻ 待複習</button>
+        <button class="btn btn-success" onclick="markStatus('mastered')">✓ 已記住（下一題）</button>
+      </div>
+
+      <div class="swipe-tip">💡 支援手機左右滑動換題・進度自動儲存於瀏覽器</div>
+    </div>
+
+    <div id="view-list" class="hidden">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+        <button class="icon-btn" onclick="toggleAllList(false)">🙈 全部隱藏</button>
+        <button class="icon-btn" onclick="toggleAllList(true)">👁 全部打開</button>
+      </div>
+      <div id="list-container"></div>
+    </div>
+
+    <div id="view-arch" class="hidden">
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">1. 完整 Request → Response 流程</div>
+        <div class="question-text" style="font-size:16px;">Client ↔ HTTP/HTTPS ↔ Server ↔ Database</div>
+        <pre class="code-block">[前端 Client]
+  1. 組裝 Method + URL + Headers (Token) + JSON Body
+     │  HTTPS Request
+     ▼
+[後端 API Server]
+  2. CORS / Auth 驗證 (JWT) → 參數檢查 (Validation)
+  3. 業務邏輯 → 讀寫 Database / 外部服務
+     │  HTTP Status (200/4xx/5xx) + JSON Response
+     ▼
+[前端 Client]
+  4. 檢查 res.ok → 解析 res.json() → 更新 UI 狀態</pre>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">2. HTTP 狀態碼速記表</div>
+        <div class="question-text" style="font-size:16px;">一眼判斷問題出在誰身上</div>
+        <div class="answer-point">• <b>2xx 成功</b>：<code>200 OK</code>（查詢/更新成功）、<code>201 Created</code>（新增成功）、<code>204 No Content</code>（刪除成功）。</div>
+        <div class="answer-point">• <b>4xx 前端/請求端問題</b>：<code>400</code> 參數錯、<code>401</code> 未登入、<code>403</code> 沒權限、<code>404</code> 找不到、<code>429</code> 請求太頻繁。</div>
+        <div class="answer-point">• <b>5xx 後端伺服器問題</b>：<code>500</code> 程式崩潰、<code>502/503</code> 閘道或服務暫時無法使用、<code>504</code> 逾時。</div>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">3. API 除錯三步驟</div>
+        <div class="question-text" style="font-size:16px;">快速釐清前端 vs 後端責任</div>
+        <div class="answer-point">• <b>1. 開 DevTools Network</b>：確認實際送出的 URL、Method、Headers（有無帶 Token）與 Payload。</div>
+        <div class="answer-point">• <b>2. 看 Status 與 Response</b>：若出現 <code>CORS error</code> 是後端 Header 沒放行；<code>4xx</code> 查前端參數；<code>5xx</code> 查後端 Log。</div>
+        <div class="answer-point">• <b>3. 用 <code>curl</code> 獨立重現</b>：在終端機直接打 API，排除瀏覽器快取與前端程式碼干擾。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CARDS = [
+      {
+        id: 1,
+        cat: "http",
+        catName: "請求與回應",
+        q: "從前端發起一個 API 呼叫到畫面顯示資料，完整生命週期依序經過哪 5 個階段？",
+        hint: "想想看：組裝請求 → 網路連線 → 伺服器處理 → 回傳結果 → 前端渲染。",
+        ans: [
+          "• <b>1. 前端組裝 Request</b>：設定 URL、Method（如 GET/POST）、Headers（如 Token、Content-Type）與 Body。",
+          "• <b>2. 建立連線</b>：瀏覽器解析 DNS 並透過 HTTPS（TLS 加密）送出封包。",
+          "• <b>3. 後端驗證與路由</b>：Server 依路由分派，先跑 Middleware（驗證身分、檢查格式、限流）。",
+          "• <b>4. 執行業務與資料庫</b>：讀寫 DB 或呼叫第三方服務，整理出 JSON 結果與對應 Status Code。",
+          "• <b>5. 回傳與前端更新</b>：前端收到 Response，檢查 <code>res.ok</code> 並解析 JSON 後更新畫面。"
+        ],
+        code: "Client(fetch) -> DNS/TLS -> Server(Auth & Validation) -> DB -> JSON Response -> UI Update"
+      },
+      {
+        id: 2,
+        cat: "http",
+        catName: "請求與回應",
+        q: "HTTP 請求中，Path Param、Query String、Headers 與 Body 各適合放什麼資料？",
+        hint: "哪個指定特定資源 ID？哪個放搜尋/分頁條件？哪個放 Token？哪個放表單 JSON？",
+        ans: [
+          "• <b>Path Param（路徑參數）</b>：定位特定資源，例如 <code>/users/42</code> 的 <code>42</code>。",
+          "• <b>Query String（查詢參數）</b>：過濾、排序、分頁條件，例如 <code>?page=2&amp;limit=20</code>。",
+          "• <b>Headers（標頭）</b>：放中繼資訊，例如 <code>Authorization: Bearer ...</code>、<code>Content-Type: application/json</code>。",
+          "• <b>Body（主體）</b>：在 POST/PUT/PATCH 中承載要新增或修改的結構化 JSON 資料（GET 通常不放 Body）。"
+        ],
+        code: "POST /api/v1/orders/42/items?notify=true\nHeaders: { Authorization: 'Bearer xxx', Content-Type: 'application/json' }\nBody:    { \"sku\": \"A01\", \"qty\": 2 }"
+      },
+      {
+        id: 3,
+        cat: "http",
+        catName: "請求與回應",
+        q: "GET、POST、PUT、PATCH、DELETE 五大 Method 各代表什麼？什麼是「冪等性（Idempotency）」？",
+        hint: "想一想：同一個請求不小心按了兩次，資料庫結果會不會變兩筆？",
+        ans: [
+          "• <b>GET</b>（讀取）、<b>POST</b>（新增）、<b>PUT</b>（整筆覆蓋更新）、<b>PATCH</b>（局部欄位更新）、<b>DELETE</b>（刪除）。",
+          "• <b>冪等性（Idempotency）</b>：指「同一個請求送 1 次和送 10 次，對伺服器造成的最終狀態結果都相同」。",
+          "• <code>GET / PUT / DELETE</code> 具備冪等性（網路斷線可安全重試）；<b><code>POST</code> 通常不具冪等性</b>（重送會建立兩筆訂單，實務常搭配 <code>Idempotency-Key</code> 防重複扣款）。"
+        ],
+        code: "GET    /users/1  -> 讀取（冪等）\nPOST   /users    -> 新增（非冪等，小心重複送出！）\nPUT    /users/1  -> 整筆替換（冪等）\nPATCH  /users/1  -> 局部修改（如只改 email）\nDELETE /users/1  -> 刪除（冪等）"
+      },
+      {
+        id: 4,
+        cat: "http",
+        catName: "請求與回應",
+        q: "用 JavaScript fetch() 搭配 async/await 呼叫 API 時，為什麼要 await 兩次，且不能只靠 try/catch 抓 404/500？",
+        hint: "fetch() 的第一個 Promise 只代表「收到回應標頭」，而且 404/500 不會自動 throw Error！",
+        ans: [
+          "• <b>為什麼要 <code>await</code> 兩次</b>：第一次 <code>await fetch(url)</code> 等待伺服器回傳標頭（Response 物件）；第二次 <code>await res.json()</code> 等待把回傳串流（Body）讀完並轉成 JS 物件。",
+          "• <b>重要陷阱</b>：<code>fetch()</code> 只有在「網路斷線 / DNS 失敗」時才會 reject；<b>收到 404 或 500 並不會進 catch</b>！必須手動檢查 <code>if (!res.ok)</code> 並自行拋錯。"
+        ],
+        code: "const res = await fetch('/api/cards');\nif (!res.ok) throw new Error(`HTTP ${res.status}`); // 必寫！\nconst data = await res.json();"
+      },
+      {
+        id: 5,
+        cat: "rest",
+        catName: "REST 與狀態碼",
+        q: "HTTP 狀態碼 2xx、3xx、4xx、5xx 的大分類與常見數字（200/201/400/404/429/500）各代表什麼？",
+        hint: "2 開頭成功、3 開頭轉址、4 開頭怪前端/請求、5 開頭怪後端。",
+        ans: [
+          "• <b>2xx 成功</b>：<code>200 OK</code>（成功）、<code>201 Created</code>（資源建立成功）。",
+          "• <b>3xx 重新導向</b>：<code>301/302</code>（網址轉址）、<code>304 Not Modified</code>（資源未變，直接用快取）。",
+          "• <b>4xx 客戶端錯誤</b>：<code>400</code> 請求格式錯誤、<code>404</code> 找不到路徑/資源、<code>429 Too Many Requests</code> 觸發限流。",
+          "• <b>5xx 伺服器錯誤</b>：<code>500</code> 後端內部錯誤、<code>503</code> 服務過載維護中。"
+        ],
+        code: "2xx = 成功 | 3xx = 轉址/快取 | 4xx = 請求方問題 | 5xx = 伺服器問題"
+      },
+      {
+        id: 6,
+        cat: "rest",
+        catName: "REST 與狀態碼",
+        q: "401 Unauthorized 與 403 Forbidden 的本質差別是什麼？前端收到後該怎麼處理？",
+        hint: "一個是「你還沒證明你是誰」，一個是「我知道你是誰，但你等級不夠」。",
+        ans: [
+          "• <b><code>401 Unauthorized</code>（未認證 / Authentication 失敗）</b>：沒帶 Token、Token 過期或無效 → 系統不知道你是誰。<b>處理方式</b>：導回登入頁或自動 Refresh Token。",
+          "• <b><code>403 Forbidden</code>（無權限 / Authorization 失敗）</b>：已確認你的身分，但你的角色無權存取該資源（例如一般會員想進管理員後台）。<b>處理方式</b>：提示「權限不足」，重新登入也沒用。"
+        ],
+        code: "401 = Who are you? (未登入 / Token 過期)\n403 = I know you, but NO! (已登入但權限不足)"
+      },
+      {
+        id: 7,
+        cat: "rest",
+        catName: "REST 與狀態碼",
+        q: "設計乾淨的 RESTful API 時，URL 命名與錯誤回應有哪些常見最佳實務？",
+        hint: "URL 要用動詞還是名詞？單數還是複數？錯誤訊息應該怎麼給前端？",
+        ans: [
+          "• <b>URL 用名詞複數、動作交給 Method</b>：用 <code>DELETE /api/v1/cards/12</code>，而不是 <code>GET /deleteCard?id=12</code>。",
+          "• <b>版本前綴</b>：加上 <code>/v1/</code>，未來改版不破壞舊版 App。",
+          "• <b>統一 JSON 錯誤格式</b>：回傳一致的 <code>{ code, message, details }</code>，讓前端能統一攔截與顯示友善提示。"
+        ],
+        code: "✓ GET  /api/v1/cards?topic=git&page=1\n✗ POST /api/getGitCards\n\n統一錯誤格式: { \"code\": \"INVALID_EMAIL\", \"message\": \"Email 格式不正確\" }"
+      },
+      {
+        id: 8,
+        cat: "auth",
+        catName: "驗證與除錯",
+        q: "常見的 JWT（JSON Web Token）API 驗證流程是怎麼運作的？為什麼還需要 Refresh Token？",
+        hint: "登入換通行證 → 每次請求帶在 Header → 通行證過期怎麼無痛續命？",
+        ans: [
+          "• <b>1. 登入發證</b>：前端送帳號密碼到 <code>POST /auth/login</code>，後端驗證後簽發短效 <b>Access Token（JWT）</b> 與長效 <b>Refresh Token</b>。",
+          "• <b>2. 攜帶驗證</b>：後續每次打 API，前端都在 Header 加上 <code>Authorization: Bearer &lt;JWT&gt;</code>，後端直接用密鑰驗簽（無狀態、免查 Session）。",
+          "• <b>3. 無痛續命</b>：Access Token 刻意設短（如 15 分鐘）降低外洩風險；過期收到 401 時，再用 Refresh Token（常存於 <code>HttpOnly Cookie</code>）換取新的 Access Token。"
+        ],
+        code: "1. POST /login  ---> 取得 Access Token (15m) + Refresh Token (7d)\n2. GET  /me     ---> Header: Authorization: Bearer <Access Token>\n3. 401 過期     ---> POST /refresh 換新 Access Token"
+      },
+      {
+        id: 9,
+        cat: "auth",
+        catName: "驗證與除錯",
+        q: "前端呼叫 API 時出現「CORS 錯誤」，其實是誰擋住的？預檢請求（Preflight）是什麼？",
+        hint: "用 curl 打同一個 API 通常沒事，只有瀏覽器會報錯！",
+        ans: [
+          "• <b>是「瀏覽器」基於同源政策（Same-Origin Policy）擋住的</b>，用來防止惡意網站偷打其他網域的 API（跨協議、跨網域或跨 Port 都算跨來源）。",
+          "• <b>Preflight（預檢請求）</b>：當發送非簡單請求（例如帶 <code>Authorization</code> 或 <code>Content-Type: application/json</code>）時，瀏覽器會先自動發一個 <b><code>OPTIONS</code></b> 詢問後端是否允許。",
+          "• <b>正解在後端</b>：由後端在回應加上 <code>Access-Control-Allow-Origin</code> 與允許的 Methods/Headers（前端開發期也可用 Vite/Next Proxy 轉發）。"
+        ],
+        code: "Browser --[1. OPTIONS Preflight]--> API Server\nBrowser <--[2. Access-Control-Allow-Origin: https://app.com]--\nBrowser --[3. 正式 POST Request]--> API Server"
+      },
+      {
+        id: 10,
+        cat: "auth",
+        catName: "驗證與除錯",
+        q: "開發時 API 串接失敗，如何用 3 分鐘快速判斷是「前端送錯」還是「後端壞掉」？",
+        hint: "打開瀏覽器 F12 的哪個頁籤？最後再用什麼終端機工具做交叉驗證？",
+        ans: [
+          "• <b>Step 1 檢查 Network 頁籤</b>：看 Request URL、Method、Headers（Token 有無漏帶）與 Payload 是否符合規格。",
+          "• <b>Step 2 判讀 Status 與 Response</b>：沒發出或標紅字無 Status 多半是 CORS/斷網；<code>4xx</code> 優先查前端送出的資料；<code>5xx</code> 把 Request ID / Response 丟給後端查 Log。",
+          "• <b>Step 3 Copy as cURL 獨立驗證</b>：在 Network 對請求按右鍵「Copy as cURL」貼到終端機執行，快速排除前端狀態與瀏覽器快取干擾。"
+        ],
+        code: "curl -i -X POST https://api.example.com/v1/cards \\\n  -H \"Authorization: Bearer <TOKEN>\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"title\":\"API Flow\"}'"
+      }
+    ];
+
+    const STORAGE_KEY = "agy_api_flashcards_v1";
+    const THEME_KEY = "agy_study_theme_v1";
+    let statusMap = {};
+    let listOpenMap = {};
+    let currentMode = "flashcard";
+    let currentCat = "all";
+    let currentIdx = 0;
+    let showAns = false;
+    let showHint = false;
+
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) statusMap = JSON.parse(saved) || {};
+    } catch (_) {}
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
+      } catch (_) {}
+    }
+
+    function getFiltered() {
+      if (currentCat === "all") return CARDS;
+      if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
+      return CARDS.filter(c => c.cat === currentCat);
+    }
+
+    function updateBadges() {
+      const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
+      const review = Object.values(statusMap).filter(v => v === "review").length;
+      document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
+      document.getElementById("cat-review").textContent = `待複習 (${review})`;
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      ["flashcard", "list", "arch"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
+      });
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch");
+      if (mode === "flashcard") renderCard();
+      if (mode === "list") renderList();
+    }
+
+    function setCategory(cat) {
+      currentCat = cat;
+      currentIdx = 0;
+      showAns = false;
+      showHint = false;
+      ["all", "http", "rest", "auth", "review"].forEach(c => {
+        document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
+      });
+      if (currentMode === "flashcard") renderCard();
+      if (currentMode === "list") renderList();
+    }
+
+    function renderCard() {
+      const list = getFiltered();
+      updateBadges();
+
+      if (list.length === 0) {
+        document.getElementById("c-index").textContent = "0 / 0";
+        document.getElementById("c-cat").textContent = "無題目";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (10)」繼續練習。";
+        document.getElementById("c-hint").classList.add("hidden");
+        document.getElementById("c-reveal").classList.add("hidden");
+        document.getElementById("c-answer").classList.add("hidden");
+        document.getElementById("c-status").classList.add("hidden");
+        return;
+      }
+
+      if (currentIdx >= list.length) currentIdx = 0;
+      if (currentIdx < 0) currentIdx = list.length - 1;
+
+      const card = list[currentIdx];
+      document.getElementById("c-index").textContent = `Q${card.id} (${currentIdx + 1}/${list.length})`;
+      document.getElementById("c-cat").textContent = card.catName;
+      document.getElementById("c-question").textContent = card.q;
+
+      const stEl = document.getElementById("c-status");
+      const st = statusMap[card.id];
+      if (st === "mastered") {
+        stEl.textContent = "✓ 已記住";
+        stEl.className = "status-tag status-mastered";
+      } else if (st === "review") {
+        stEl.textContent = "↻ 待複習";
+        stEl.className = "status-tag status-review";
+      } else {
+        stEl.className = "status-tag hidden";
+      }
+
+      const hintEl = document.getElementById("c-hint");
+      hintEl.textContent = `💡 提示：${card.hint}`;
+      hintEl.classList.toggle("hidden", !showHint);
+
+      document.getElementById("c-answer-points").innerHTML = card.ans
+        .map(line => `<div class="answer-point">${line}</div>`)
+        .join("");
+
+      const codeEl = document.getElementById("c-code");
+      if (card.code) {
+        codeEl.textContent = card.code;
+        codeEl.classList.remove("hidden");
+      } else {
+        codeEl.classList.add("hidden");
+      }
+
+      document.getElementById("c-reveal").classList.toggle("hidden", showAns);
+      document.getElementById("c-answer").classList.toggle("hidden", !showAns);
+      document.getElementById("btn-main-toggle").textContent = showAns ? "🙈 隱藏答案" : "👁 打開答案";
+    }
+
+    function toggleAnswer() {
+      if (getFiltered().length === 0) return;
+      showAns = !showAns;
+      renderCard();
+    }
+
+    function toggleHint() {
+      if (getFiltered().length === 0) return;
+      showHint = !showHint;
+      renderCard();
+    }
+
+    function nextCard() {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      currentIdx = (currentIdx + 1) % list.length;
+      showAns = false;
+      showHint = false;
+      renderCard();
+    }
+
+    function prevCard() {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      currentIdx = (currentIdx - 1 + list.length) % list.length;
+      showAns = false;
+      showHint = false;
+      renderCard();
+    }
+
+    function markStatus(state) {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      const card = list[currentIdx];
+      statusMap[card.id] = state;
+      saveProgress();
+      updateBadges();
+      if (state === "mastered") {
+        nextCard();
+      } else {
+        renderCard();
+      }
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const box = document.getElementById("list-container");
+      updateBadges();
+
+      if (list.length === 0) {
+        box.innerHTML = `<div class="card">目前此分類沒有題目。</div>`;
+        return;
+      }
+
+      box.innerHTML = list.map(card => {
+        const open = !!listOpenMap[card.id];
+        const st = statusMap[card.id];
+        const stBadge = st === "mastered"
+          ? `<span class="status-tag status-mastered">✓ 已記住</span>`
+          : st === "review"
+          ? `<span class="status-tag status-review">↻ 待複習</span>`
+          : "";
+
+        return `
+          <div class="list-item">
+            <div class="list-q-row" onclick="toggleListOne(${card.id})">
+              <div>
+                <div class="meta-left">
+                  <span class="q-num">Q${card.id}</span>
+                  <span class="q-cat">${card.catName}</span>
+                  ${stBadge}
+                </div>
+                <div class="list-q-title">${escapeHtml(card.q)}</div>
+              </div>
+              <button class="icon-btn" style="flex-shrink:0;white-space:nowrap;">${open ? "🙈 收起" : "👁 答案"}</button>
+            </div>
+            ${open ? `
+              <div class="answer-box">
+                <div class="hint-box">💡 提示：${escapeHtml(card.hint)}</div>
+                ${card.ans.map(line => `<div class="answer-point">${line}</div>`).join("")}
+                ${card.code ? `<pre class="code-block">${escapeHtml(card.code)}</pre>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleListOne(id) {
+      listOpenMap[id] = !listOpenMap[id];
+      renderList();
+    }
+
+    function toggleAllList(openState) {
+      CARDS.forEach(c => { listOpenMap[c.id] = openState; });
+      renderList();
+    }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const cur = root.getAttribute("data-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const isDark = cur ? cur === "dark" : prefersDark;
+      const next = isDark ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+    }
+
+    function resetAll() {
+      if (!confirm("確定要重置「API 流程」的學習進度嗎？")) return;
+      statusMap = {};
+      listOpenMap = {};
+      showAns = false;
+      showHint = false;
+      currentIdx = 0;
+      saveProgress();
+      setCategory("all");
+    }
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const touchCard = document.getElementById("touch-card");
+    touchCard.addEventListener("touchstart", e => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    touchCard.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) nextCard();
+        else prevCard();
+      }
+    }, { passive: true });
+
+    document.addEventListener("keydown", e => {
+      if (currentMode !== "flashcard") return;
+      if (e.key === "ArrowRight") nextCard();
+      else if (e.key === "ArrowLeft") prevCard();
+      else if (e.key === " " && e.target === document.body) {
+        e.preventDefault();
+        toggleAnswer();
+      }
+    });
+
+    renderCard();
+  </script>
+</body>
+</html>

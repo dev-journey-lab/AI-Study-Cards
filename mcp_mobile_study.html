@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>MCP 架構與使用 — 手機隨身記憶卡</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #2563eb;
+      --primary-fg: #ffffff;
+      --primary-soft: #dbeafe;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #d97706;
+      --warning-soft: #fef3c7;
+      --code-bg: #1e293b;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-alt: #334155;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #3b82f6;
+        --primary-fg: #ffffff;
+        --primary-soft: rgba(59, 130, 246, 0.2);
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.2);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.2);
+        --code-bg: #020617;
+        --code-fg: #e2e8f0;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-fg: #ffffff;
+      --primary-soft: rgba(59, 130, 246, 0.2);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.2);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.2);
+      --code-bg: #020617;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 84px) 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 0 10px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .back-btn {
+      text-decoration: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .title {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .badge-progress {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 9px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Mode Tabs */
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: var(--card-alt);
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 9px 4px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--card);
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Category Pills (Horizontal Scroll on Mobile) */
+    .cat-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+    }
+    .cat-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-pill {
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .cat-pill.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: var(--primary-fg);
+    }
+
+    /* Flashcard Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .meta-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .q-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 3px 9px;
+      border-radius: 6px;
+    }
+
+    .q-cat {
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .status-tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .status-mastered {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+    .status-review {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .question-text {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .hint-box {
+      background: var(--card-alt);
+      border-left: 3px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .reveal-box {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 26px 16px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--card-alt);
+      transition: border-color 0.15s;
+    }
+
+    .reveal-box:active {
+      border-color: var(--primary);
+    }
+
+    .reveal-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .reveal-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .answer-box {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      margin-top: 8px;
+    }
+
+    .answer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .answer-point {
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.9em;
+      background: var(--card-alt);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    pre.code-block {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      padding: 12px;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 10px 0 0 0;
+    }
+
+    /* Bottom Action Buttons for Mobile Thumb Zone */
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .grade-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-fg);
+      border-color: var(--primary);
+    }
+
+    .btn-success {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: transparent;
+    }
+
+    .btn-warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-color: transparent;
+    }
+
+    /* List View */
+    .list-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .list-q-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .list-q-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .swipe-tip {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Top Header -->
+    <div class="header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← 目錄</a>
+        <h1 class="title">🔌 MCP 隨身記憶卡</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-badge" class="badge-progress">已記住 0 / 10</span>
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
+        <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
+      </div>
+    </div>
+
+    <!-- Mode Switcher -->
+    <div class="tabs">
+      <button id="tab-flashcard" class="tab-btn active" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
+      <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 架構對照</button>
+    </div>
+
+    <!-- Category Bar -->
+    <div id="cat-bar" class="cat-bar">
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (10)</button>
+      <button id="cat-arch" class="cat-pill" onclick="setCategory('arch')">核心架構 (4)</button>
+      <button id="cat-impl" class="cat-pill" onclick="setCategory('impl')">實作與除錯 (4)</button>
+      <button id="cat-sec" class="cat-pill" onclick="setCategory('sec')">安全與治理 (2)</button>
+      <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
+    </div>
+
+    <!-- VIEW 1: Single Card Mobile Flashcard -->
+    <div id="view-flashcard">
+      <div id="touch-card" class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span id="c-index" class="q-num">Q1 (1/10)</span>
+            <span id="c-cat" class="q-cat">核心架構</span>
+            <span id="c-status" class="status-tag hidden"></span>
+          </div>
+          <button id="btn-hint" class="icon-btn" onclick="toggleHint()">💡 提示</button>
+        </div>
+
+        <div id="c-question" class="question-text"></div>
+
+        <div id="c-hint" class="hint-box hidden"></div>
+
+        <!-- Hidden Answer Box -->
+        <div id="c-reveal" class="reveal-box" onclick="toggleAnswer()">
+          <div class="reveal-title">🔒 答案已隱藏（先在腦中回想）</div>
+          <div class="reveal-sub">點一下這裡打開答案</div>
+        </div>
+
+        <!-- Revealed Answer Content -->
+        <div id="c-answer" class="answer-box hidden">
+          <div class="answer-header">
+            <span>✓ 標準解析與記憶重點</span>
+            <span onclick="toggleAnswer()" style="color:var(--muted);font-weight:500;text-decoration:underline;cursor:pointer;">收起答案</span>
+          </div>
+          <div id="c-answer-points"></div>
+          <pre id="c-code" class="code-block hidden"></pre>
+        </div>
+      </div>
+
+      <!-- Mobile Thumb Controls -->
+      <div class="action-grid">
+        <button class="btn" onclick="prevCard()">← 上一題</button>
+        <button id="btn-main-toggle" class="btn btn-primary" onclick="toggleAnswer()">👁 打開答案</button>
+        <button class="btn" onclick="nextCard()">下一題 →</button>
+      </div>
+
+      <div class="grade-grid">
+        <button class="btn btn-warning" onclick="markStatus('review')">↻ 待複習</button>
+        <button class="btn btn-success" onclick="markStatus('mastered')">✓ 已記住（下一題）</button>
+      </div>
+
+      <div class="swipe-tip">💡 支援手機左右滑動換題・進度自動儲存於手機瀏覽器</div>
+    </div>
+
+    <!-- VIEW 2: Full List View -->
+    <div id="view-list" class="hidden">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+        <button class="icon-btn" onclick="toggleAllList(false)">🙈 全部隱藏</button>
+        <button class="icon-btn" onclick="toggleAllList(true)">👁 全部打開</button>
+      </div>
+      <div id="list-container"></div>
+    </div>
+
+    <!-- VIEW 3: Architecture Summary -->
+    <div id="view-arch" class="hidden">
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">1. Host & Client（發起端）</div>
+        <div class="question-text" style="font-size:16px;">Claude / Antigravity / Codex / Python Host</div>
+        <div class="answer-point">• 負責管理與使用者的對話、向 MCP Server 索取工具清單（<code>tools/list</code>），並在模型發出工具呼叫時決定是否放行。</div>
+        <div class="answer-point">• <b>對應本專案 Stage 3</b>：<b>人工單次核准閘門（Approval Gate）</b>設於 Host 層，人類輸入 <code>APPROVE</code> 後才真正執行高風險動作。</div>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">2. Transport（通訊傳輸協定）</div>
+        <div class="question-text" style="font-size:16px;">本機 stdio / 遠端 Streamable HTTP</div>
+        <div class="answer-point">• <b>本機 <code>stdio</code></b>：Host 直接以子程序啟動 <code>uv run server.py</code>，走 <code>stdin/stdout</code> 交換 JSON-RPC 2.0（免開 Port、零網路暴露）。</div>
+        <div class="answer-point">• ⚠️ <b>重要陷阱</b>：<code>stdio</code> 模式下不可用 <code>print()</code> 輸出除錯文字到 <code>stdout</code>，必須改印到 <code>sys.stderr</code>。</div>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">3. MCP Server（能力供應者）</div>
+        <div class="question-text" style="font-size:16px;">FastMCP (server.py) 獨立服務</div>
+        <div class="answer-point">• 宣告三大能力：<b>Tools</b>（<code>@mcp.tool()</code> 模型主動呼叫）、<b>Resources</b>（<code>@mcp.resource()</code> 唯讀資料 URI）、<b>Prompts</b>（提示模板）。</div>
+        <div class="answer-point">• <b>安全重點</b>：MCP 不自帶沙盒！Server 內仍須保留路徑白名單、<code>O_DIRECTORY | O_NOFOLLOW</code> 與 <code>audit.jsonl</code> 稽核紀錄。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CARDS = [
+      {
+        id: 1,
+        cat: "arch",
+        catName: "核心架構",
+        q: "MCP 的三個核心層級（Host、Client、Server）分別負責什麼工作？",
+        hint: "想一想：使用者操作的 AI 主程式、內部的 1:1 連線模組、以及你寫的 server.py 各屬於哪一層？",
+        ans: [
+          "• <b>Host（宿主應用）</b>：與使用者互動的 AI 主程式（如 Claude Desktop、Antigravity、Codex 或我們的 <code>stage3_approval_gate.py</code>），掌管安全邊界與<b>人類單次核准（Approval Gate）</b>。",
+          "• <b>Client（協定客戶端）</b>：內嵌於 Host 內，與單一 MCP Server 維持 <code>1:1</code> 專屬連線並收發 JSON-RPC 訊息。",
+          "• <b>Server（能力供應者）</b>：封裝資料或工具的獨立輕量程序（如 <code>server.py</code>），主動宣告支援的 Tools、Resources、Prompts。"
+        ],
+        code: "[Host: AI App + 核准閘門]\n  └── [MCP Client 1:1] <== stdio / HTTP ==> [MCP Server: server.py]"
+      },
+      {
+        id: 2,
+        cat: "arch",
+        catName: "核心架構",
+        q: "MCP Server 可以提供哪「三大核心能力（Primitives）」？各自的觸發者是誰？",
+        hint: "一個由 LLM 主動決定呼叫、一個像唯讀資料 URI、一個像預設指令模板。",
+        ans: [
+          "• <b>1. Tools（工具 / 函數）</b>：由 <b>LLM（模型）主動決定呼叫</b>（需經 Host 允許），用於執行查詢、計算或動作（如 <code>@mcp.tool()</code>）。",
+          "• <b>2. Resources（資源 / 資料）</b>：由 <b>應用程式或使用者選取掛載</b>的唯讀上下文資料，以 URI 識別（如 <code>@mcp.resource('config://status')</code>）。",
+          "• <b>3. Prompts（提示詞模板）</b>：由 <b>使用者主動選取</b>（常對應 <code>/</code> 斜線指令）的標準化提示詞範本。"
+        ],
+        code: "@mcp.tool()      -> 模型主動呼叫 (Model-controlled)\n@mcp.resource()  -> 應用/使用者掛載唯讀資料 (App-controlled)\n@mcp.prompt()    -> 使用者選取工作流模板 (User-controlled)"
+      },
+      {
+        id: 3,
+        cat: "arch",
+        catName: "核心架構",
+        q: "本機（Local）與遠端（Remote）MCP Server 分別使用什麼通訊傳輸協定（Transport）？",
+        hint: "本機由 Client 直接啟動子程序，不需開網路 Port；遠端則走 HTTP。",
+        ans: [
+          "• <b>本機：<code>stdio</code>（標準輸入 / 輸出）</b>：Client 直接以子程序（subprocess）啟動 Server，透過 <code>stdin</code> / <code>stdout</code> 交換 JSON-RPC 2.0 訊息，免開 Port 且極低延遲。",
+          "• <b>遠端：<code>Streamable HTTP</code>（早期為 <code>HTTP + SSE</code>）</b>：適用於跨機器或微服務架構。"
+        ],
+        code: "mcp.run(transport='stdio')  # 本機最常用：由 Client 以子程序啟動"
+      },
+      {
+        id: 4,
+        cat: "arch",
+        catName: "核心架構",
+        q: "當 AI 呼叫一個 MCP 工具時，底層 JSON-RPC 2.0 依序經歷哪三個主要步驟？",
+        hint: "先握手確認版本 → 再詢問有哪些工具與參數格式 → 最後才傳入參數執行。",
+        ans: [
+          "• <b>Step 1 握手初始化（<code>initialize</code>）</b>：Client 與 Server 交換協定版本與支援的能力（Capabilities）。",
+          "• <b>Step 2 探索工具清單（<code>tools/list</code>）</b>：Client 取得 Server 所有工具的名稱、說明與 JSON Schema（<code>inputSchema</code>）。",
+          "• <b>Step 3 執行工具呼叫（<code>tools/call</code>）</b>：LLM 決定呼叫後，Client 傳送工具名稱與 <code>arguments</code>，Server 執行並回傳結果。"
+        ],
+        code: "1. initialize  -> 雙方確認 capabilities\n2. tools/list  -> 取得工具名稱、說明與 inputSchema\n3. tools/call  -> 傳送 { name, arguments } 並取回 content"
+      },
+      {
+        id: 5,
+        cat: "impl",
+        catName: "實作與除錯",
+        q: "在 Python FastMCP 中，為什麼函式的「型別標註（Type Hints）」與「Docstring 註解」非常重要？",
+        hint: "LLM 怎麼知道這個工具什麼時候該用、參數要傳字串還是整數？",
+        ans: [
+          "• <b>自動生成 JSON Schema</b>：<code>FastMCP</code> 會讀取 Python 函式的參數型別（如 <code>keyword: str, max_lines: int = 5</code>），自動轉換為標準 <code>inputSchema</code>。",
+          "• <b>作為 LLM 的呼叫依據</b>：函式的 <code>\"\"\"Docstring\"\"\"</code> 會直接變成工具的 <code>description</code>，模型完全依賴這段說明決定何時呼叫該工具。"
+        ],
+        code: "@mcp.tool()\ndef search_logs(keyword: str, max_lines: int = 5) -> str:\n    \"\"\"根據關鍵字檢索本機日誌，回傳最新記錄。\"\"\" # <-- LLM 靠這行決定是否呼叫"
+      },
+      {
+        id: 6,
+        cat: "impl",
+        catName: "實作與除錯",
+        q: "寫好 server.py 後，如何在不掛載進 Claude Desktop 或 IDE 的情況下，獨立測試工具功能？",
+        hint: "官方提供一個透過 npx 啟動的瀏覽器互動除錯面板。",
+        ans: [
+          "• 使用官方互動式除錯面板 <b>MCP Inspector</b>：",
+          "• 執行後會在瀏覽器開啟測試儀表板，可直接檢視 <code>tools/list</code> 的 JSON Schema、手動輸入參數測試工具呼叫並檢查回傳 JSON 結構。"
+        ],
+        code: "npx @modelcontextprotocol/inspector uv run server.py"
+      },
+      {
+        id: 7,
+        cat: "impl",
+        catName: "實作與除錯",
+        q: "為什麼在 stdio 模式的 MCP Server 裡，絕對不能用一般 print('debug') 印出除錯訊息？該怎麼改？",
+        hint: "想一想 stdio 模式下，stdout 通道正在傳送什麼格式？",
+        ans: [
+          "• <b>原因</b>：<code>stdio</code> 模式使用標準輸出（<code>stdout</code>）傳送 JSON-RPC 2.0 封包。若隨意 <code>print()</code> 到 <code>stdout</code>，會混入非 JSON 文字，導致 Client 解析失敗並立刻斷線。",
+          "• <b>正確做法</b>：除錯訊息一律輸出到 <b><code>sys.stderr</code></b>，或寫入獨立日誌檔案（如 <code>audit.jsonl</code>）。"
+        ],
+        code: "import sys\nprint('[DEBUG] 收到請求', file=sys.stderr)  # ✓ 正確：走 stderr"
+      },
+      {
+        id: 8,
+        cat: "impl",
+        catName: "實作與除錯",
+        q: "在客戶端設定檔（如 claude_desktop_config.json）掛載 stdio Server 時，command 與 args 的運作原理是什麼？",
+        hint: "為什麼設定檔裡填的是 uv 與檔案絕對路徑，而不是網址（URL）？",
+        ans: [
+          "• Host 啟動時會直接依照 <code>command</code> 與 <code>args</code> <b>在本機啟動一個子程序（Subprocess）</b>，並接管它的 <code>stdin</code> 與 <code>stdout</code>。",
+          "• 因此不需預先在背景手動啟動 Server，也不會占用本機網路 Port。"
+        ],
+        code: "\"mcpServers\": {\n  \"my-local-server\": {\n    \"command\": \"uv\",\n    \"args\": [\"--directory\", \"/絕對路徑/my-mcp-server\", \"run\", \"server.py\"]\n  }\n}"
+      },
+      {
+        id: 9,
+        cat: "sec",
+        catName: "安全與治理",
+        q: "【專案治理結合】把讀寫檔工具包成 MCP Server 後，就能自動防止路徑穿越（../）或越權寫檔嗎？",
+        hint: "回想我們在 Stage 2 / Stage 3 實作的白名單、O_DIRECTORY|O_NOFOLLOW 與人工核准閘門。",
+        ans: [
+          "• <b>不能！MCP 只是「通訊介面標準」，不等於「安全沙盒」</b>。本機 MCP Server 預設擁有當前使用者的完整檔案讀寫權限。",
+          "• 因此我們在 Stage 2 / Stage 3 建立的四大防線仍必須實作於 MCP Server / Host 中：",
+          "  1. <b>目錄白名單與拒絕 <code>..</code> / 絕對路徑</b>；2. <b><code>O_DIRECTORY | O_NOFOLLOW</code> 防 symlink 替換</b>；3. <b>暫存檔驗證後 <code>os.link</code> 禁止覆寫發布</b>；4. <b>寫入前的人類單次核准（<code>APPROVE</code>）與兩階段 <code>audit.jsonl</code> 稽核</b>。"
+        ],
+        code: "MCP 協定 = 標準化插頭 (USB-C)\n安全邊界 = 仍需 Server 端路徑白名單 + Host 端人類單次核准 + audit.jsonl"
+      },
+      {
+        id: 10,
+        cat: "sec",
+        catName: "安全與治理",
+        q: "【專案架構對照】若將我們剛完成的 Experiment 01 (Stage 2/3) 改寫為 MCP 架構，哪些邏輯放在 Server、哪些留在 Host？",
+        hint: "工具執行與檔案邊界 vs. 推論迴圈與向人類詢問 APPROVE。",
+        ans: [
+          "• <b>封裝進 MCP Server</b>：<code>read_fixture_file</code>（唯讀樣本工具）、檔案路徑邊界檢核、SHA-256 計算與工具端稽核紀錄。",
+          "• <b>保留在 Host（如 Ollama 宿主或 Antigravity / Codex）</b>：LLM 對話迴圈、回合數上限（<code>MAX_TURNS</code>），以及<b>在執行高風險寫檔 Tool 前攔截並要求人類親手輸入單次核准</b>。"
+        ],
+        code: "Host (Ollama Loop / IDE) --[人類核准通過]--> MCP Client --[tools/call]--> MCP Server"
+      }
+    ];
+
+    const STORAGE_KEY = "agy_mcp_flashcards_v1";
+    const THEME_KEY = "agy_study_theme_v1";
+    let statusMap = {};
+    let listOpenMap = {};
+    let currentMode = "flashcard";
+    let currentCat = "all";
+    let currentIdx = 0;
+    let showAns = false;
+    let showHint = false;
+
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) statusMap = JSON.parse(saved) || {};
+    } catch (_) {}
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
+      } catch (_) {}
+    }
+
+    function getFiltered() {
+      if (currentCat === "all") return CARDS;
+      if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
+      return CARDS.filter(c => c.cat === currentCat);
+    }
+
+    function updateBadges() {
+      const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
+      const review = Object.values(statusMap).filter(v => v === "review").length;
+      document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
+      document.getElementById("cat-review").textContent = `待複習 (${review})`;
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      ["flashcard", "list", "arch"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
+      });
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch");
+      if (mode === "flashcard") renderCard();
+      if (mode === "list") renderList();
+    }
+
+    function setCategory(cat) {
+      currentCat = cat;
+      currentIdx = 0;
+      showAns = false;
+      showHint = false;
+      ["all", "arch", "impl", "sec", "review"].forEach(c => {
+        document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
+      });
+      if (currentMode === "flashcard") renderCard();
+      if (currentMode === "list") renderList();
+    }
+
+    function renderCard() {
+      const list = getFiltered();
+      updateBadges();
+
+      if (list.length === 0) {
+        document.getElementById("c-index").textContent = "0 / 0";
+        document.getElementById("c-cat").textContent = "無題目";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (10)」繼續練習。";
+        document.getElementById("c-hint").classList.add("hidden");
+        document.getElementById("c-reveal").classList.add("hidden");
+        document.getElementById("c-answer").classList.add("hidden");
+        document.getElementById("c-status").classList.add("hidden");
+        return;
+      }
+
+      if (currentIdx >= list.length) currentIdx = 0;
+      if (currentIdx < 0) currentIdx = list.length - 1;
+
+      const card = list[currentIdx];
+      document.getElementById("c-index").textContent = `Q${card.id} (${currentIdx + 1}/${list.length})`;
+      document.getElementById("c-cat").textContent = card.catName;
+      document.getElementById("c-question").textContent = card.q;
+
+      const stEl = document.getElementById("c-status");
+      const st = statusMap[card.id];
+      if (st === "mastered") {
+        stEl.textContent = "✓ 已記住";
+        stEl.className = "status-tag status-mastered";
+      } else if (st === "review") {
+        stEl.textContent = "↻ 待複習";
+        stEl.className = "status-tag status-review";
+      } else {
+        stEl.className = "status-tag hidden";
+      }
+
+      const hintEl = document.getElementById("c-hint");
+      hintEl.textContent = `💡 提示：${card.hint}`;
+      hintEl.classList.toggle("hidden", !showHint);
+
+      document.getElementById("c-answer-points").innerHTML = card.ans
+        .map(line => `<div class="answer-point">${line}</div>`)
+        .join("");
+
+      const codeEl = document.getElementById("c-code");
+      if (card.code) {
+        codeEl.textContent = card.code;
+        codeEl.classList.remove("hidden");
+      } else {
+        codeEl.classList.add("hidden");
+      }
+
+      document.getElementById("c-reveal").classList.toggle("hidden", showAns);
+      document.getElementById("c-answer").classList.toggle("hidden", !showAns);
+      document.getElementById("btn-main-toggle").textContent = showAns ? "🙈 隱藏答案" : "👁 打開答案";
+    }
+
+    function toggleAnswer() {
+      if (getFiltered().length === 0) return;
+      showAns = !showAns;
+      renderCard();
+    }
+
+    function toggleHint() {
+      if (getFiltered().length === 0) return;
+      showHint = !showHint;
+      renderCard();
+    }
+
+    function nextCard() {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      currentIdx = (currentIdx + 1) % list.length;
+      showAns = false;
+      showHint = false;
+      renderCard();
+    }
+
+    function prevCard() {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      currentIdx = (currentIdx - 1 + list.length) % list.length;
+      showAns = false;
+      showHint = false;
+      renderCard();
+    }
+
+    function markStatus(state) {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      const card = list[currentIdx];
+      statusMap[card.id] = state;
+      saveProgress();
+      updateBadges();
+      if (state === "mastered") {
+        nextCard();
+      } else {
+        renderCard();
+      }
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const box = document.getElementById("list-container");
+      updateBadges();
+
+      if (list.length === 0) {
+        box.innerHTML = `<div class="card">目前此分類沒有題目。</div>`;
+        return;
+      }
+
+      box.innerHTML = list.map(card => {
+        const open = !!listOpenMap[card.id];
+        const st = statusMap[card.id];
+        const stBadge = st === "mastered"
+          ? `<span class="status-tag status-mastered">✓ 已記住</span>`
+          : st === "review"
+          ? `<span class="status-tag status-review">↻ 待複習</span>`
+          : "";
+
+        return `
+          <div class="list-item">
+            <div class="list-q-row" onclick="toggleListOne(${card.id})">
+              <div>
+                <div class="meta-left">
+                  <span class="q-num">Q${card.id}</span>
+                  <span class="q-cat">${card.catName}</span>
+                  ${stBadge}
+                </div>
+                <div class="list-q-title">${escapeHtml(card.q)}</div>
+              </div>
+              <button class="icon-btn" style="flex-shrink:0;white-space:nowrap;">${open ? "🙈 收起" : "👁 答案"}</button>
+            </div>
+            ${open ? `
+              <div class="answer-box">
+                <div class="hint-box">💡 提示：${escapeHtml(card.hint)}</div>
+                ${card.ans.map(line => `<div class="answer-point">${line}</div>`).join("")}
+                ${card.code ? `<pre class="code-block">${escapeHtml(card.code)}</pre>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleListOne(id) {
+      listOpenMap[id] = !listOpenMap[id];
+      renderList();
+    }
+
+    function toggleAllList(openState) {
+      CARDS.forEach(c => { listOpenMap[c.id] = openState; });
+      renderList();
+    }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const cur = root.getAttribute("data-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const isDark = cur ? cur === "dark" : prefersDark;
+      const next = isDark ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+    }
+
+    function resetAll() {
+      if (!confirm("確定要重置「MCP 架構」的學習進度嗎？")) return;
+      statusMap = {};
+      listOpenMap = {};
+      showAns = false;
+      showHint = false;
+      currentIdx = 0;
+      saveProgress();
+      setCategory("all");
+    }
+
+    // Mobile Swipe Left / Right Gesture Support
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const touchCard = document.getElementById("touch-card");
+    touchCard.addEventListener("touchstart", e => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    touchCard.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) nextCard();
+        else prevCard();
+      }
+    }, { passive: true });
+
+    document.addEventListener("keydown", e => {
+      if (currentMode !== "flashcard") return;
+      if (e.key === "ArrowRight") nextCard();
+      else if (e.key === "ArrowLeft") prevCard();
+      else if (e.key === " " && e.target === document.body) {
+        e.preventDefault();
+        toggleAnswer();
+      }
+    });
+
+    renderCard();
+  </script>
+</body>
+</html>

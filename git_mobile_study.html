@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Git 工作流程 — 手機隨身記憶卡</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #ea580c;
+      --primary-fg: #ffffff;
+      --primary-soft: #ffedd5;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #d97706;
+      --warning-soft: #fef3c7;
+      --code-bg: #1e293b;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-alt: #334155;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #f97316;
+        --primary-fg: #ffffff;
+        --primary-soft: rgba(249, 115, 22, 0.2);
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.2);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.2);
+        --code-bg: #020617;
+        --code-fg: #e2e8f0;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #f97316;
+      --primary-fg: #ffffff;
+      --primary-soft: rgba(249, 115, 22, 0.2);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.2);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.2);
+      --code-bg: #020617;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 84px) 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 0 10px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .back-btn {
+      text-decoration: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .title {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .badge-progress {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 9px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: var(--card-alt);
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 9px 4px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--card);
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .cat-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+    }
+    .cat-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-pill {
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .cat-pill.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: var(--primary-fg);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .meta-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .q-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 3px 9px;
+      border-radius: 6px;
+    }
+
+    .q-cat {
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .status-tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .status-mastered {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+    .status-review {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .question-text {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .hint-box {
+      background: var(--card-alt);
+      border-left: 3px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .reveal-box {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 26px 16px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--card-alt);
+      transition: border-color 0.15s;
+    }
+
+    .reveal-box:active {
+      border-color: var(--primary);
+    }
+
+    .reveal-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .reveal-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .answer-box {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      margin-top: 8px;
+    }
+
+    .answer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .answer-point {
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.9em;
+      background: var(--card-alt);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    pre.code-block {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      padding: 12px;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 10px 0 0 0;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .grade-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-fg);
+      border-color: var(--primary);
+    }
+
+    .btn-success {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: transparent;
+    }
+
+    .btn-warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-color: transparent;
+    }
+
+    .list-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .list-q-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .list-q-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .swipe-tip {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← 目錄</a>
+        <h1 class="title">🌿 Git 流程記憶卡</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-badge" class="badge-progress">已記住 0 / 10</span>
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
+        <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-flashcard" class="tab-btn active" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
+      <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 流程總覽</button>
+    </div>
+
+    <div id="cat-bar" class="cat-bar">
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (10)</button>
+      <button id="cat-core" class="cat-pill" onclick="setCategory('core')">四區與日常 (4)</button>
+      <button id="cat-branch" class="cat-pill" onclick="setCategory('branch')">分支與協作 (3)</button>
+      <button id="cat-rescue" class="cat-pill" onclick="setCategory('rescue')">還原與衝突 (3)</button>
+      <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
+    </div>
+
+    <div id="view-flashcard">
+      <div id="touch-card" class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span id="c-index" class="q-num">Q1 (1/10)</span>
+            <span id="c-cat" class="q-cat">四區與日常</span>
+            <span id="c-status" class="status-tag hidden"></span>
+          </div>
+          <button id="btn-hint" class="icon-btn" onclick="toggleHint()">💡 提示</button>
+        </div>
+
+        <div id="c-question" class="question-text"></div>
+        <div id="c-hint" class="hint-box hidden"></div>
+
+        <div id="c-reveal" class="reveal-box" onclick="toggleAnswer()">
+          <div class="reveal-title">🔒 答案已隱藏（先在腦中回想）</div>
+          <div class="reveal-sub">點一下這裡打開答案</div>
+        </div>
+
+        <div id="c-answer" class="answer-box hidden">
+          <div class="answer-header">
+            <span>✓ 標準解析與記憶重點</span>
+            <span onclick="toggleAnswer()" style="color:var(--muted);font-weight:500;text-decoration:underline;cursor:pointer;">收起答案</span>
+          </div>
+          <div id="c-answer-points"></div>
+          <pre id="c-code" class="code-block hidden"></pre>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="btn" onclick="prevCard()">← 上一題</button>
+        <button id="btn-main-toggle" class="btn btn-primary" onclick="toggleAnswer()">👁 打開答案</button>
+        <button class="btn" onclick="nextCard()">下一題 →</button>
+      </div>
+
+      <div class="grade-grid">
+        <button class="btn btn-warning" onclick="markStatus('review')">↻ 待複習</button>
+        <button class="btn btn-success" onclick="markStatus('mastered')">✓ 已記住（下一題）</button>
+      </div>
+
+      <div class="swipe-tip">💡 支援手機左右滑動換題・進度自動儲存於瀏覽器</div>
+    </div>
+
+    <div id="view-list" class="hidden">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+        <button class="icon-btn" onclick="toggleAllList(false)">🙈 全部隱藏</button>
+        <button class="icon-btn" onclick="toggleAllList(true)">👁 全部打開</button>
+      </div>
+      <div id="list-container"></div>
+    </div>
+
+    <div id="view-arch" class="hidden">
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">1. 本機到遠端四區流程</div>
+        <div class="question-text" style="font-size:16px;">Working → Staging → Local → Remote</div>
+        <pre class="code-block">工作目錄 (Working)
+   │  git add &lt;file&gt;
+   ▼
+暫存區 (Staging / Index)
+   │  git commit -m "feat: ..."
+   ▼
+本機倉庫 (Local Repository)
+   │  git push origin &lt;branch&gt;
+   ▼
+遠端倉庫 (Remote / GitHub)</pre>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">2. 團隊 Feature Branch + PR 標準流程</div>
+        <div class="question-text" style="font-size:16px;">保護 main・獨立開發・審查合併</div>
+        <div class="answer-point">• <b>Step 1 同步主幹</b>：切回 <code>main</code> 並 <code>git pull</code> 取得最新進度。</div>
+        <div class="answer-point">• <b>Step 2 開立分支</b>：<code>git switch -c feat/login</code>，絕不直接在 <code>main</code> 改扣。</div>
+        <div class="answer-point">• <b>Step 3 開發與推送</b>：小步 <code>add</code> → <code>commit</code> → <code>git push -u origin feat/login</code>。</div>
+        <div class="answer-point">• <b>Step 4 開 PR 與合併</b>：在 GitHub 發起 Pull Request → Code Review 通過 → Merge 回 <code>main</code> 並刪除舊分支。</div>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">3. 常見出錯急救速查</div>
+        <div class="question-text" style="font-size:16px;">依照「走到哪一步」決定還原指令</div>
+        <div class="answer-point">• <b>改壞檔案還沒 add</b>：<code>git restore &lt;file&gt;</code>（放棄工作目錄修改）</div>
+        <div class="answer-point">• <b>已 add 想取消暫存</b>：<code>git restore --staged &lt;file&gt;</code></div>
+        <div class="answer-point">• <b>已 commit 但未 push</b>：<code>git reset --soft HEAD~1</code>（保留修改退回暫存區）</div>
+        <div class="answer-point">• <b>已經 push 上共用遠端</b>：用 <code>git revert &lt;commit&gt;</code>（新增反向提交，不改寫歷史）</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CARDS = [
+      {
+        id: 1,
+        cat: "core",
+        catName: "四區與日常",
+        q: "Git 的「四個核心區域」是什麼？一個修改從編輯到推上遠端依序經過哪些指令？",
+        hint: "想想看：你編輯檔案的地方、add 之後放的地方、commit 後存的地方、push 後去的地方。",
+        ans: [
+          "• <b>1. Working Directory（工作目錄）</b>：電腦上實際編輯檔案的資料夾。",
+          "• <b>2. Staging Area（暫存區 / Index）</b>：透過 <code>git add</code> 挑選「準備打包進下次提交」的變更。",
+          "• <b>3. Local Repository（本機倉庫）</b>：透過 <code>git commit</code> 將暫存區永久寫成一筆版本快照（Commit）。",
+          "• <b>4. Remote Repository（遠端倉庫）</b>：透過 <code>git push</code> 將本機提交同步到 GitHub / GitLab。"
+        ],
+        code: "Working --[git add]--> Staging --[git commit]--> Local Repo --[git push]--> Remote"
+      },
+      {
+        id: 2,
+        cat: "core",
+        catName: "四區與日常",
+        q: "git status、git diff 與 git diff --staged 分別在檢查哪個區域的變化？",
+        hint: "一個看總覽狀態，另外兩個分別比對「還沒 add」與「已經 add」的差異。",
+        ans: [
+          "• <b><code>git status</code></b>：總覽目前所在分支、哪些檔案已修改、已暫存或未追蹤（Untracked）。",
+          "• <b><code>git diff</code></b>：比對「<b>工作目錄 vs. 暫存區</b>」，看你剛改好但<b>還沒 add</b> 的細部行數差異。",
+          "• <b><code>git diff --staged</code></b>：比對「<b>暫存區 vs. 最新 Commit</b>」，提交前最後確認即將打包的內容。"
+        ],
+        code: "git status          # 看全局狀態\ngit diff            # 看「還沒 add」的改動\ngit diff --staged   # 看「已經 add、準備 commit」的改動"
+      },
+      {
+        id: 3,
+        cat: "core",
+        catName: "四區與日常",
+        q: "日常提交（Add → Commit → Push）流程中，為什麼要「分批小步提交」與寫好 Commit Message？",
+        hint: "想一想出錯要回退（revert）或同事做 Code Review 時的體驗。",
+        ans: [
+          "• <b>原子化提交（Atomic Commit）</b>：每次 commit 只做一件獨立的事（例如修一個 bug 或加一個功能），出錯時才容易單獨還原，也不會讓審查者看懂困難。",
+          "• <b>語意化前綴（Conventional Commits）</b>：用 <code>feat:</code>（新功能）、<code>fix:</code>（修 Bug）、<code>docs:</code>（文件）、<code>refactor:</code>（重構），讓 <code>git log</code> 一目了然。"
+        ],
+        code: "git add src/auth.js\ngit commit -m \"fix: handle expired JWT token on refresh\"\ngit push origin feat/auth"
+      },
+      {
+        id: 4,
+        cat: "core",
+        catName: "四區與日常",
+        q: "git fetch 與 git pull 有什麼差別？什麼時候建議先用 git fetch？",
+        hint: "一個只把遠端紀錄「抓下來看」，另一個會直接「抓下來並合併」到你目前的分支。",
+        ans: [
+          "• <b><code>git fetch</code></b>：只從遠端下載最新的 commit 與分支資訊到本機（更新 <code>origin/main</code>），<b>不會動到你的工作目錄</b>，完全安全。",
+          "• <b><code>git pull</code></b>：等於 <code>git fetch</code> + <code>git merge</code>（或加上 <code>--rebase</code>），會直接把遠端更新合併進你目前的分支。",
+          "• <b>實務建議</b>：不確定遠端改了什麼時，先 <code>git fetch</code> 再用 <code>git log HEAD..origin/main</code> 檢查，確認沒問題再合併。"
+        ],
+        code: "git fetch origin             # 安全下載遠端紀錄，不動目前程式碼\ngit pull --rebase origin main # 下載並將本機提交接到最新 main 之後"
+      },
+      {
+        id: 5,
+        cat: "branch",
+        catName: "分支與協作",
+        q: "團隊開發為什麼不在 main 直接改扣？標準的 Feature Branch → Pull Request 流程怎麼走？",
+        hint: "讓 main 永遠保持「隨時可上線」的穩定狀態。",
+        ans: [
+          "• <b>核心原則</b>：<code>main</code> 是穩定主幹；任何新功能或修復都必須開一條獨立分支開發，避免未完成的程式碼互相汙染。",
+          "• <b>標準 5 步</b>：1. 切到 <code>main</code> 並 <code>git pull</code> → 2. <code>git switch -c feat/xxx</code> 開新分支 → 3. 開發與 commit → 4. <code>git push -u origin feat/xxx</code> → 5. 在 GitHub 開 PR、跑 CI 測試、Code Review 通過後 Merge。"
+        ],
+        code: "git switch main && git pull\ngit switch -c feat/study-cards\n# ... 開發與 commit ...\ngit push -u origin feat/study-cards"
+      },
+      {
+        id: 6,
+        cat: "branch",
+        catName: "分支與協作",
+        q: "git merge 與 git rebase 在整合分支上有什麼差別？使用 rebase 的「黃金禁令」是什麼？",
+        hint: "一個會留下分叉與合併節點，另一個會把你的提交「重新搬家」接成一條直線。",
+        ans: [
+          "• <b><code>git merge</code></b>：保留完整分支分叉歷史，並產生一個新的 Merge Commit，<b>不改寫既有提交紀錄</b>，最安全。",
+          "• <b><code>git rebase</code></b>：將當前分支的提交「重播」到目標分支最前面，產生乾淨的線性歷史，但會<b>改寫 Commit Hash</b>。",
+          "• <b>⚠️ 黃金禁令</b>：<b>絕對不要對已經推上遠端且與他人共用的分支（如 <code>main</code>）做 rebase</b>，否則會造成團隊歷史分歧。"
+        ],
+        code: "merge:  A---B---M (保留分叉與合併節點)\n             \\ /\n              C\n\nrebase: A---B---C' (線性歷史，但 C 的 hash 會改變)"
+      },
+      {
+        id: 7,
+        cat: "branch",
+        catName: "分支與協作",
+        q: "功能寫到一半還不能 commit，突然被要求切換分支修緊急 Bug，怎麼暫存手邊進度？",
+        hint: "Git 提供一個像「抽屜」的暫存堆疊功能。",
+        ans: [
+          "• 使用 <b><code>git stash</code></b>：把目前還沒 commit 的修改暫時收進「抽屜」，讓工作目錄恢復乾淨，就能立刻切分支修 Bug。",
+          "• 修完切回原分支後，用 <b><code>git stash pop</code></b> 把剛剛收起來的修改取回並從抽屜移除（想保留備份則用 <code>git stash apply</code>）。"
+        ],
+        code: "git stash push -m \"WIP: navbar style\"  # 收進抽屜\ngit switch main && git switch -c hotfix/login\n# ... 修完 bug 切回原分支 ...\ngit stash pop                           # 取出原進度繼續寫"
+      },
+      {
+        id: 8,
+        cat: "rescue",
+        catName: "還原與衝突",
+        q: "git reset（--soft / --mixed / --hard）與 git revert 有什麼核心差別？已經 push 該用哪個？",
+        hint: "一個是「時光倒流抹除紀錄」，一個是「新增一筆反向操作來抵銷」。",
+        ans: [
+          "• <b><code>git reset</code></b>：直接把分支指標往回移，改寫歷史（只適合<b>尚未 push 的本機提交</b>）：",
+          "  - <code>--soft</code>：退回 commit，<b>保留檔案與暫存區</b>；<code>--mixed</code>（預設）：保留檔案但退出暫存區；<code>--hard</code>：<b>連工作目錄修改一併清空</b>（高風險）。",
+          "• <b><code>git revert &lt;commit&gt;</code></b>：建立一筆「新的反向 Commit」來抵銷舊提交，<b>不改寫歷史</b>，是已推送到共用遠端後的唯一安全解法。"
+        ],
+        code: "git reset --soft HEAD~1   # 本機未 push：撤銷上次 commit，程式碼都還在\ngit revert a1b2c3d        # 已 push 遠端：安全新增一筆反向提交"
+      },
+      {
+        id: 9,
+        cat: "rescue",
+        catName: "還原與衝突",
+        q: "發生合併衝突（Merge Conflict）時，檔案中的 <<<<<<<、=======、>>>>>>> 代表什麼？怎麼解決？",
+        hint: "Git 不知道要留你的版本還是對方的版本，所以把兩邊都標出來等你決定。",
+        ans: [
+          "• <b>標記意義</b>：<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> 到 <code>=======</code> 是<b>你目前分支的版本</b>；<code>=======</code> 到 <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> 是<b>要合併進來的版本</b>。",
+          "• <b>標準解決 3 步</b>：1. 打開衝突檔案，手動整理成正確結果並<b>刪掉所有衝突標記符號</b> → 2. <code>git add &lt;已解決檔案&gt;</code> 告知 Git 處理完成 → 3. 執行 <code>git commit</code>（或 <code>git rebase --continue</code>）。"
+        ],
+        code: "<<<<<<< HEAD\nconst timeout = 5000;\n=======\nconst timeout = 10000;\n>>>>>>> feat/api-retry\n# 決定留哪一個、刪掉標記後 -> git add . && git commit"
+      },
+      {
+        id: 10,
+        cat: "rescue",
+        catName: "還原與衝突",
+        q: "不小心執行了 git reset --hard 或刪錯分支，Commit 看不見了還有救嗎？",
+        hint: "Git 本機有紀錄「HEAD 指標過去每一步移動軌跡」的暗黑日誌。",
+        ans: [
+          "• <b>有救！使用 <code>git reflog</code></b>：只要曾經 commit 過，Git 預設會在本機保留 HEAD 移動紀錄（約 30~90 天）。",
+          "• 先執行 <code>git reflog</code> 找到刪錯前的 Commit Hash（例如 <code>HEAD@{2}</code>），再執行 <code>git reset --hard &lt;hash&gt;</code> 或開新分支救回即可。"
+        ],
+        code: "git reflog                     # 查出誤刪前的 commit hash (如 9f8e7d6)\ngit switch -c rescue 9f8e7d6   # 直接在那個時間點開新分支救回"
+      }
+    ];
+
+    const STORAGE_KEY = "agy_git_flashcards_v1";
+    const THEME_KEY = "agy_study_theme_v1";
+    let statusMap = {};
+    let listOpenMap = {};
+    let currentMode = "flashcard";
+    let currentCat = "all";
+    let currentIdx = 0;
+    let showAns = false;
+    let showHint = false;
+
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) statusMap = JSON.parse(saved) || {};
+    } catch (_) {}
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
+      } catch (_) {}
+    }
+
+    function getFiltered() {
+      if (currentCat === "all") return CARDS;
+      if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
+      return CARDS.filter(c => c.cat === currentCat);
+    }
+
+    function updateBadges() {
+      const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
+      const review = Object.values(statusMap).filter(v => v === "review").length;
+      document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
+      document.getElementById("cat-review").textContent = `待複習 (${review})`;
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      ["flashcard", "list", "arch"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
+      });
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch");
+      if (mode === "flashcard") renderCard();
+      if (mode === "list") renderList();
+    }
+
+    function setCategory(cat) {
+      currentCat = cat;
+      currentIdx = 0;
+      showAns = false;
+      showHint = false;
+      ["all", "core", "branch", "rescue", "review"].forEach(c => {
+        document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
+      });
+      if (currentMode === "flashcard") renderCard();
+      if (currentMode === "list") renderList();
+    }
+
+    function renderCard() {
+      const list = getFiltered();
+      updateBadges();
+
+      if (list.length === 0) {
+        document.getElementById("c-index").textContent = "0 / 0";
+        document.getElementById("c-cat").textContent = "無題目";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (10)」繼續練習。";
+        document.getElementById("c-hint").classList.add("hidden");
+        document.getElementById("c-reveal").classList.add("hidden");
+        document.getElementById("c-answer").classList.add("hidden");
+        document.getElementById("c-status").classList.add("hidden");
+        return;
+      }
+
+      if (currentIdx >= list.length) currentIdx = 0;
+      if (currentIdx < 0) currentIdx = list.length - 1;
+
+      const card = list[currentIdx];
+      document.getElementById("c-index").textContent = `Q${card.id} (${currentIdx + 1}/${list.length})`;
+      document.getElementById("c-cat").textContent = card.catName;
+      document.getElementById("c-question").textContent = card.q;
+
+      const stEl = document.getElementById("c-status");
+      const st = statusMap[card.id];
+      if (st === "mastered") {
+        stEl.textContent = "✓ 已記住";
+        stEl.className = "status-tag status-mastered";
+      } else if (st === "review") {
+        stEl.textContent = "↻ 待複習";
+        stEl.className = "status-tag status-review";
+      } else {
+        stEl.className = "status-tag hidden";
+      }
+
+      const hintEl = document.getElementById("c-hint");
+      hintEl.textContent = `💡 提示：${card.hint}`;
+      hintEl.classList.toggle("hidden", !showHint);
+
+      document.getElementById("c-answer-points").innerHTML = card.ans
+        .map(line => `<div class="answer-point">${line}</div>`)
+        .join("");
+
+      const codeEl = document.getElementById("c-code");
+      if (card.code) {
+        codeEl.textContent = card.code;
+        codeEl.classList.remove("hidden");
+      } else {
+        codeEl.classList.add("hidden");
+      }
+
+      document.getElementById("c-reveal").classList.toggle("hidden", showAns);
+      document.getElementById("c-answer").classList.toggle("hidden", !showAns);
+      document.getElementById("btn-main-toggle").textContent = showAns ? "🙈 隱藏答案" : "👁 打開答案";
+    }
+
+    function toggleAnswer() {
+      if (getFiltered().length === 0) return;
+      showAns = !showAns;
+      renderCard();
+    }
+
+    function toggleHint() {
+      if (getFiltered().length === 0) return;
+      showHint = !showHint;
+      renderCard();
+    }
+
+    function nextCard() {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      currentIdx = (currentIdx + 1) % list.length;
+      showAns = false;
+      showHint = false;
+      renderCard();
+    }
+
+    function prevCard() {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      currentIdx = (currentIdx - 1 + list.length) % list.length;
+      showAns = false;
+      showHint = false;
+      renderCard();
+    }
+
+    function markStatus(state) {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      const card = list[currentIdx];
+      statusMap[card.id] = state;
+      saveProgress();
+      updateBadges();
+      if (state === "mastered") {
+        nextCard();
+      } else {
+        renderCard();
+      }
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const box = document.getElementById("list-container");
+      updateBadges();
+
+      if (list.length === 0) {
+        box.innerHTML = `<div class="card">目前此分類沒有題目。</div>`;
+        return;
+      }
+
+      box.innerHTML = list.map(card => {
+        const open = !!listOpenMap[card.id];
+        const st = statusMap[card.id];
+        const stBadge = st === "mastered"
+          ? `<span class="status-tag status-mastered">✓ 已記住</span>`
+          : st === "review"
+          ? `<span class="status-tag status-review">↻ 待複習</span>`
+          : "";
+
+        return `
+          <div class="list-item">
+            <div class="list-q-row" onclick="toggleListOne(${card.id})">
+              <div>
+                <div class="meta-left">
+                  <span class="q-num">Q${card.id}</span>
+                  <span class="q-cat">${card.catName}</span>
+                  ${stBadge}
+                </div>
+                <div class="list-q-title">${escapeHtml(card.q)}</div>
+              </div>
+              <button class="icon-btn" style="flex-shrink:0;white-space:nowrap;">${open ? "🙈 收起" : "👁 答案"}</button>
+            </div>
+            ${open ? `
+              <div class="answer-box">
+                <div class="hint-box">💡 提示：${escapeHtml(card.hint)}</div>
+                ${card.ans.map(line => `<div class="answer-point">${line}</div>`).join("")}
+                ${card.code ? `<pre class="code-block">${escapeHtml(card.code)}</pre>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleListOne(id) {
+      listOpenMap[id] = !listOpenMap[id];
+      renderList();
+    }
+
+    function toggleAllList(openState) {
+      CARDS.forEach(c => { listOpenMap[c.id] = openState; });
+      renderList();
+    }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const cur = root.getAttribute("data-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const isDark = cur ? cur === "dark" : prefersDark;
+      const next = isDark ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+    }
+
+    function resetAll() {
+      if (!confirm("確定要重置「Git 流程」的學習進度嗎？")) return;
+      statusMap = {};
+      listOpenMap = {};
+      showAns = false;
+      showHint = false;
+      currentIdx = 0;
+      saveProgress();
+      setCategory("all");
+    }
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const touchCard = document.getElementById("touch-card");
+    touchCard.addEventListener("touchstart", e => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    touchCard.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) nextCard();
+        else prevCard();
+      }
+    }, { passive: true });
+
+    document.addEventListener("keydown", e => {
+      if (currentMode !== "flashcard") return;
+      if (e.key === "ArrowRight") nextCard();
+      else if (e.key === "ArrowLeft") prevCard();
+      else if (e.key === " " && e.target === document.body) {
+        e.preventDefault();
+        toggleAnswer();
+      }
+    });
+
+    renderCard();
+  </script>
+</body>
+</html>

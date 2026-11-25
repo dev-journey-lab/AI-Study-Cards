@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>React 渲染與開發流程 — 手機隨身記憶卡</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #0284c7;
+      --primary-fg: #ffffff;
+      --primary-soft: #e0f2fe;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #d97706;
+      --warning-soft: #fef3c7;
+      --code-bg: #1e293b;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-alt: #334155;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #38bdf8;
+        --primary-fg: #0f172a;
+        --primary-soft: rgba(56, 189, 248, 0.2);
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.2);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.2);
+        --code-bg: #020617;
+        --code-fg: #e2e8f0;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-fg: #0f172a;
+      --primary-soft: rgba(56, 189, 248, 0.2);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.2);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.2);
+      --code-bg: #020617;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 84px) 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 0 10px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .back-btn {
+      text-decoration: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .title {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .badge-progress {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 9px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: var(--card-alt);
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 9px 4px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--card);
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .cat-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+    }
+    .cat-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-pill {
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .cat-pill.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: var(--primary-fg);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .meta-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .q-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 3px 9px;
+      border-radius: 6px;
+    }
+
+    .q-cat {
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .status-tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .status-mastered {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+    .status-review {
+      background: var(--warning-soft);
+      color: var(--warning);
+    }
+
+    .question-text {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .hint-box {
+      background: var(--card-alt);
+      border-left: 3px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .reveal-box {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 26px 16px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--card-alt);
+      transition: border-color 0.15s;
+    }
+
+    .reveal-box:active {
+      border-color: var(--primary);
+    }
+
+    .reveal-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .reveal-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .answer-box {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      margin-top: 8px;
+    }
+
+    .answer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .answer-point {
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.9em;
+      background: var(--card-alt);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    pre.code-block {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      padding: 12px;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 10px 0 0 0;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .grade-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-fg);
+      border-color: var(--primary);
+    }
+
+    .btn-success {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: transparent;
+    }
+
+    .btn-warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-color: transparent;
+    }
+
+    .list-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .list-q-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .list-q-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .swipe-tip {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← 目錄</a>
+        <h1 class="title">⚛️ React 流程記憶卡</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-badge" class="badge-progress">已記住 0 / 10</span>
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
+        <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-flashcard" class="tab-btn active" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
+      <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 流程總覽</button>
+    </div>
+
+    <div id="cat-bar" class="cat-bar">
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (10)</button>
+      <button id="cat-render" class="cat-pill" onclick="setCategory('render')">渲染與資料流 (4)</button>
+      <button id="cat-hooks" class="cat-pill" onclick="setCategory('hooks')">State 與 Effect (3)</button>
+      <button id="cat-pattern" class="cat-pill" onclick="setCategory('pattern')">實務與效能 (3)</button>
+      <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
+    </div>
+
+    <div id="view-flashcard">
+      <div id="touch-card" class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span id="c-index" class="q-num">Q1 (1/10)</span>
+            <span id="c-cat" class="q-cat">渲染與資料流</span>
+            <span id="c-status" class="status-tag hidden"></span>
+          </div>
+          <button id="btn-hint" class="icon-btn" onclick="toggleHint()">💡 提示</button>
+        </div>
+
+        <div id="c-question" class="question-text"></div>
+        <div id="c-hint" class="hint-box hidden"></div>
+
+        <div id="c-reveal" class="reveal-box" onclick="toggleAnswer()">
+          <div class="reveal-title">🔒 答案已隱藏（先在腦中回想）</div>
+          <div class="reveal-sub">點一下這裡打開答案</div>
+        </div>
+
+        <div id="c-answer" class="answer-box hidden">
+          <div class="answer-header">
+            <span>✓ 標準解析與記憶重點</span>
+            <span onclick="toggleAnswer()" style="color:var(--muted);font-weight:500;text-decoration:underline;cursor:pointer;">收起答案</span>
+          </div>
+          <div id="c-answer-points"></div>
+          <pre id="c-code" class="code-block hidden"></pre>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="btn" onclick="prevCard()">← 上一題</button>
+        <button id="btn-main-toggle" class="btn btn-primary" onclick="toggleAnswer()">👁 打開答案</button>
+        <button class="btn" onclick="nextCard()">下一題 →</button>
+      </div>
+
+      <div class="grade-grid">
+        <button class="btn btn-warning" onclick="markStatus('review')">↻ 待複習</button>
+        <button class="btn btn-success" onclick="markStatus('mastered')">✓ 已記住（下一題）</button>
+      </div>
+
+      <div class="swipe-tip">💡 支援手機左右滑動換題・進度自動儲存於瀏覽器</div>
+    </div>
+
+    <div id="view-list" class="hidden">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+        <button class="icon-btn" onclick="toggleAllList(false)">🙈 全部隱藏</button>
+        <button class="icon-btn" onclick="toggleAllList(true)">👁 全部打開</button>
+      </div>
+      <div id="list-container"></div>
+    </div>
+
+    <div id="view-arch" class="hidden">
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">1. React 渲染三階段循環</div>
+        <div class="question-text" style="font-size:16px;">Trigger → Render → Commit → Paint</div>
+        <pre class="code-block">[1. Trigger 觸發]
+   初次掛載 / 呼叫 setState()
+         │
+         ▼
+[2. Render 計算]
+   執行元件函式 → 產生新 Virtual DOM → Diff 找出差異
+         │
+         ▼
+[3. Commit 提交]
+   只把「最小必要變更」寫入真實 DOM
+         │
+         ▼
+[4. Paint &amp; Effect]
+   瀏覽器繪製畫面 → 執行 useEffect() 副作用</pre>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">2. 元件單向資料流原則</div>
+        <div class="question-text" style="font-size:16px;">Props 往下傳・Callback 往上報</div>
+        <div class="answer-point">• <b>父 → 子</b>：透過 <code>props</code> 傳遞資料與事件回呼函式（唯讀，子元件不可直接改 props）。</div>
+        <div class="answer-point">• <b>子 → 父</b>：子元件觸發事件時，呼叫父元件傳下來的 <code>onChange / onSubmit</code> 函式通知父層更新 State。</div>
+        <div class="answer-point">• <b>兄弟共享</b>：將共用 State 提升到最近的共同父元件（Lifting State Up），或跨多層時改用 Context / 狀態管理庫。</div>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">3. useEffect 執行時序速記</div>
+        <div class="question-text" style="font-size:16px;">先清舊的 Cleanup，再跑新的 Effect</div>
+        <div class="answer-point">• <code>useEffect(fn, [])</code>：僅在初次掛載執行一次；元件卸載（Unmount）時執行 Cleanup。</div>
+        <div class="answer-point">• <code>useEffect(fn, [id])</code>：<code>id</code> 變動後重新渲染完成 → 先執行上次的 Cleanup（如 <code>abort()</code>）→ 再執行本次 Effect。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CARDS = [
+      {
+        id: 1,
+        cat: "render",
+        catName: "渲染與資料流",
+        q: "React 畫面更新的「三階段流程（Trigger → Render → Commit）」分別在做什麼？",
+        hint: "比喻成餐廳：點餐（觸發）→ 廚房做菜（計算新介面）→ 上菜到餐桌（更新真實 DOM）。",
+        ans: [
+          "• <b>1. Trigger（觸發）</b>：初次渲染，或元件/祖先呼叫 <code>setState</code> 排程更新。",
+          "• <b>2. Render（渲染計算）</b>：React 重新執行元件函式，算出新的 Virtual DOM 並比對差異（此階段必須是純函式，不可直接改 DOM）。",
+          "• <b>3. Commit（提交 DOM）</b>：React 只把真正有變動的部分套用到瀏覽器真實 DOM，之後瀏覽器繪製畫面並執行 <code>useEffect</code>。"
+        ],
+        code: "setState(next) -> [Trigger] -> 執行 Component() [Render] -> 更新最小 DOM [Commit] -> Browser Paint"
+      },
+      {
+        id: 2,
+        cat: "render",
+        catName: "渲染與資料流",
+        q: "什麼是 React 的「單向資料流（One-Way Data Flow）」？Props 與 State 有什麼核心差別？",
+        hint: "想想看資料只能由上往下流，子元件想改父元件資料該怎麼做？",
+        ans: [
+          "• <b>單向資料流</b>：資料永遠由「父元件透過 Props 往下傳給子元件」；子元件若要影響父元件，只能呼叫父元件傳進來的 Callback 函式，讓源頭改變 State 後再重新流下來，除錯非常直覺。",
+          "• <b>Props（外部傳入）</b>：唯讀（Read-only），由父元件決定，子元件不可直接修改。",
+          "• <b>State（內部狀態）</b>：元件自己擁有的可變記憶，呼叫 <code>setState</code> 就會觸發重新渲染。"
+        ],
+        code: "// 父 -> 子傳資料與回呼\n<Counter count={count} onAdd={() => setCount(c => c + 1)} />"
+      },
+      {
+        id: 3,
+        cat: "render",
+        catName: "渲染與資料流",
+        q: "為什麼在 React 中不能直接修改陣列或物件 State（如 items.push(x)），必須建立新參考（Immutable）？",
+        hint: "React 怎麼快速判斷 State「有沒有變」？它用的是 Object.is 淺比較！",
+        ans: [
+          "• <b>原因</b>：React 使用 <b><code>Object.is()</code> 比較新舊 State 的記憶體參考（Reference）</b>。如果你直接 <code>items.push(x)</code> 再 <code>setItems(items)</code>，記憶體位址完全沒變，React 會以為沒變化而<b>跳過重新渲染</b>。",
+          "• <b>正確做法</b>：永遠回傳新的陣列或物件（使用展開運算子 <code>[...items, x]</code>、<code>.map()</code>、<code>.filter()</code>、<code>{ ...user, name }</code>）。"
+        ],
+        code: "// ✗ 錯誤：原地修改參考沒變\nitems.push(newItem); setItems(items);\n\n// ✓ 正確：回傳新陣列\nsetItems(prev => [...prev, newItem]);"
+      },
+      {
+        id: 4,
+        cat: "render",
+        catName: "渲染與資料流",
+        q: "在 React 用 .map() 渲染列表時為什麼一定要加 key？為什麼不建議用陣列 index 當 key？",
+        hint: "想一想如果在列表「最前面」插入一筆新資料，每筆資料的 index 會發生什麼事？",
+        ans: [
+          "• <b><code>key</code> 的作用</b>：讓 React 在 Diff 階段認出「哪一筆資料對應哪個 DOM 節點」，正確搬移或重用狀態。",
+          "• <b>為何避免用 <code>index</code></b>：當列表有新增、刪除或重新排序時，所有項目的 <code>index</code> 都會錯位，導致輸入框內容、勾選狀態配錯人，甚至造成不必要的重繪。",
+          "• <b>正解</b>：使用資料本身穩定且唯一的 <code>item.id</code>。"
+        ],
+        code: "{cards.map(card => (\n  <StudyCard key={card.id} card={card} /> // ✓ 使用唯一 id\n))}"
+      },
+      {
+        id: 5,
+        cat: "hooks",
+        catName: "State 與 Effect",
+        q: "呼叫 setCount(count + 1) 後，下一行 console.log(count) 為什麼還是舊值？連續呼叫三次會加 3 嗎？",
+        hint: "每次 Render 的 State 都像一張「唯讀快照（Snapshot）」。",
+        ans: [
+          "• <b>State 是快照</b>：同一次渲染中，<code>count</code> 的值是固定的；呼叫 <code>setCount</code> 只是「排程下一次渲染的新值」，不會立刻改寫當前函式裡的變數。",
+          "• <b>批次更新（Batching）</b>：連續寫三次 <code>setCount(count + 1)</code> 都會讀到同一個舊快照，最後只會 +1。",
+          "• <b>解法</b>：若新值依賴舊值，一律用函式更新 <b><code>setCount(prev => prev + 1)</code></b>。"
+        ],
+        code: "// 連續呼叫三次只會 +1\nsetCount(count + 1); setCount(count + 1);\n\n// ✓ 正確：改用 updater function，確實 +2\nsetCount(c => c + 1); setCount(c => c + 1);"
+      },
+      {
+        id: 6,
+        cat: "hooks",
+        catName: "State 與 Effect",
+        q: "useEffect 的執行時機是什麼？依賴陣列（省略、[]、[dep]）與 return 的 Cleanup 函式分別怎麼運作？",
+        hint: "useEffect 是在畫面「畫完之後」才跑，用來同步外部系統（API、計時器、事件監聽）。",
+        ans: [
+          "• <b>省略依賴陣列</b>：每次渲染後都執行（很少用，小心無限迴圈）。",
+          "• <b>空陣列 <code>[]</code></b>：只在元件<b>初次掛載（Mount）</b>執行一次；元件卸載（Unmount）時執行 Cleanup。",
+          "• <b>指定依賴 <code>[id]</code></b>：初次掛載與每次 <code>id</code> 變動後執行；下次重新執行前，會<b>先跑上次的 Cleanup</b> 清理舊計時器或取消舊請求。"
+        ],
+        code: "useEffect(() => {\n  const timer = setInterval(tick, 1000);\n  return () => clearInterval(timer); // Cleanup：防記憶體外洩\n}, []);"
+      },
+      {
+        id: 7,
+        cat: "hooks",
+        catName: "State 與 Effect",
+        q: "在 React 中用 useEffect 呼叫 API 抓資料時，標準的三態管理與防競態（Race Condition）怎麼做？",
+        hint: "使用者快速切換分類 A → B，如果 A 的回應比 B 晚回來蓋掉畫面怎麼辦？",
+        ans: [
+          "• <b>三態管理</b>：維護 <code>data</code>、<code>loading</code>、<code>error</code> 三個狀態，讓畫面在載入中、失敗與成功時都有清楚回饋。",
+          "• <b>防競態條件</b>：在 Cleanup 中使用 <b><code>AbortController</code></b>（或 <code>let ignore = false</code> 旗標），當依賴變動或元件卸載時取消/忽略過時的舊請求。"
+        ],
+        code: "useEffect(() => {\n  const ctrl = new AbortController();\n  setLoading(true);\n  fetch(`/api/cards?topic=${topic}`, { signal: ctrl.signal })\n    .then(r => r.json())\n    .then(data => setCards(data))\n    .catch(err => { if (err.name !== 'AbortError') setError(err); })\n    .finally(() => setLoading(false));\n  return () => ctrl.abort(); // 切換 topic 時取消舊請求\n}, [topic]);"
+      },
+      {
+        id: 8,
+        cat: "pattern",
+        catName: "實務與效能",
+        q: "兩個兄弟元件需要同步同一份資料（例如搜尋框與列表），標準的「狀態提升（Lifting State Up）」怎麼做？",
+        hint: "把 State 往上移到誰的身上，再透過 Props 往下分發？",
+        ans: [
+          "• <b>步驟 1</b>：將原本各自管理的 State 移到兩者<b>最近的共同父元件</b>，建立單一資料來源（Single Source of Truth）。",
+          "• <b>步驟 2</b>：父元件把 <code>query</code> 傳給列表做過濾，並把 <code>query</code> 與 <code>onQueryChange</code> 傳給搜尋框。",
+          "• <b>進階</b>：若元件層級隔太多層（Prop Drilling），可改用 <code>useContext</code> 或 Zustand 等輕量狀態庫。"
+        ],
+        code: "function Page() {\n  const [query, setQuery] = useState('');\n  return (<>\n    <SearchBar value={query} onChange={setQuery} />\n    <CardList query={query} />\n  </>);\n}"
+      },
+      {
+        id: 9,
+        cat: "pattern",
+        catName: "實務與效能",
+        q: "React 表單中什麼是「受控元件（Controlled Component）」？它的輸入資料流如何循環？",
+        hint: "input 顯示的文字完全由 React 的 State 掌控。",
+        ans: [
+          "• <b>定義</b>：表單元素（如 <code>&lt;input&gt;</code>）的 <code>value</code> 綁定到 React State，且每次輸入都透過 <code>onChange</code> 更新該 State。",
+          "• <b>資料循環</b>：使用者打字 → 觸發 <code>onChange</code> → 呼叫 <code>setText(e.target.value)</code> → 元件重繪 → <code>input</code> 顯示最新的 <code>value</code>。",
+          "• <b>優點</b>：可即時做格式驗證、字數限制、動態啟用/停用送出按鈕。"
+        ],
+        code: "<input\n  value={keyword}\n  onChange={e => setKeyword(e.target.value)}\n  placeholder=\"搜尋學習卡...\"\n/>"
+      },
+      {
+        id: 10,
+        cat: "pattern",
+        catName: "實務與效能",
+        q: "哪些情況會觸發元件 Re-render？什麼時候才該使用 useMemo / useCallback / React.memo？",
+        hint: "父元件重繪時子元件會跟著重繪嗎？不要過早優化！",
+        ans: [
+          "• <b>觸發 Re-render 的三大原因</b>：1. 自己的 <code>State</code> 改變；2. <b>父元件重新渲染</b>（預設會連帶重繪子元件）；3. 訂閱的 <code>Context</code> 值改變。",
+          "• <b>優化工具定位</b>：<code>useMemo</code> 快取昂貴計算結果；<code>useCallback</code> 固定函式參考；<code>React.memo</code> 讓子元件在 Props 沒變時跳過重繪。",
+          "• <b>實務原則</b>：先用 React DevTools Profiler 確認真的有卡頓瓶頸再加，過度包覆反而增加記憶體與維護成本。"
+        ],
+        code: "// 只在 cards 或 keyword 變動時重新過濾大量資料\nconst filtered = useMemo(\n  () => cards.filter(c => c.q.includes(keyword)),\n  [cards, keyword]\n);"
+      }
+    ];
+
+    const STORAGE_KEY = "agy_react_flashcards_v1";
+    const THEME_KEY = "agy_study_theme_v1";
+    let statusMap = {};
+    let listOpenMap = {};
+    let currentMode = "flashcard";
+    let currentCat = "all";
+    let currentIdx = 0;
+    let showAns = false;
+    let showHint = false;
+
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) statusMap = JSON.parse(saved) || {};
+    } catch (_) {}
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
+      } catch (_) {}
+    }
+
+    function getFiltered() {
+      if (currentCat === "all") return CARDS;
+      if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
+      return CARDS.filter(c => c.cat === currentCat);
+    }
+
+    function updateBadges() {
+      const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
+      const review = Object.values(statusMap).filter(v => v === "review").length;
+      document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
+      document.getElementById("cat-review").textContent = `待複習 (${review})`;
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      ["flashcard", "list", "arch"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
+      });
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch");
+      if (mode === "flashcard") renderCard();
+      if (mode === "list") renderList();
+    }
+
+    function setCategory(cat) {
+      currentCat = cat;
+      currentIdx = 0;
+      showAns = false;
+      showHint = false;
+      ["all", "render", "hooks", "pattern", "review"].forEach(c => {
+        document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
+      });
+      if (currentMode === "flashcard") renderCard();
+      if (currentMode === "list") renderList();
+    }
+
+    function renderCard() {
+      const list = getFiltered();
+      updateBadges();
+
+      if (list.length === 0) {
+        document.getElementById("c-index").textContent = "0 / 0";
+        document.getElementById("c-cat").textContent = "無題目";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (10)」繼續練習。";
+        document.getElementById("c-hint").classList.add("hidden");
+        document.getElementById("c-reveal").classList.add("hidden");
+        document.getElementById("c-answer").classList.add("hidden");
+        document.getElementById("c-status").classList.add("hidden");
+        return;
+      }
+
+      if (currentIdx >= list.length) currentIdx = 0;
+      if (currentIdx < 0) currentIdx = list.length - 1;
+
+      const card = list[currentIdx];
+      document.getElementById("c-index").textContent = `Q${card.id} (${currentIdx + 1}/${list.length})`;
+      document.getElementById("c-cat").textContent = card.catName;
+      document.getElementById("c-question").textContent = card.q;
+
+      const stEl = document.getElementById("c-status");
+      const st = statusMap[card.id];
+      if (st === "mastered") {
+        stEl.textContent = "✓ 已記住";
+        stEl.className = "status-tag status-mastered";
+      } else if (st === "review") {
+        stEl.textContent = "↻ 待複習";
+        stEl.className = "status-tag status-review";
+      } else {
+        stEl.className = "status-tag hidden";
+      }
+
+      const hintEl = document.getElementById("c-hint");
+      hintEl.textContent = `💡 提示：${card.hint}`;
+      hintEl.classList.toggle("hidden", !showHint);
+
+      document.getElementById("c-answer-points").innerHTML = card.ans
+        .map(line => `<div class="answer-point">${line}</div>`)
+        .join("");
+
+      const codeEl = document.getElementById("c-code");
+      if (card.code) {
+        codeEl.textContent = card.code;
+        codeEl.classList.remove("hidden");
+      } else {
+        codeEl.classList.add("hidden");
+      }
+
+      document.getElementById("c-reveal").classList.toggle("hidden", showAns);
+      document.getElementById("c-answer").classList.toggle("hidden", !showAns);
+      document.getElementById("btn-main-toggle").textContent = showAns ? "🙈 隱藏答案" : "👁 打開答案";
+    }
+
+    function toggleAnswer() {
+      if (getFiltered().length === 0) return;
+      showAns = !showAns;
+      renderCard();
+    }
+
+    function toggleHint() {
+      if (getFiltered().length === 0) return;
+      showHint = !showHint;
+      renderCard();
+    }
+
+    function nextCard() {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      currentIdx = (currentIdx + 1) % list.length;
+      showAns = false;
+      showHint = false;
+      renderCard();
+    }
+
+    function prevCard() {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      currentIdx = (currentIdx - 1 + list.length) % list.length;
+      showAns = false;
+      showHint = false;
+      renderCard();
+    }
+
+    function markStatus(state) {
+      const list = getFiltered();
+      if (list.length === 0) return;
+      const card = list[currentIdx];
+      statusMap[card.id] = state;
+      saveProgress();
+      updateBadges();
+      if (state === "mastered") {
+        nextCard();
+      } else {
+        renderCard();
+      }
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const box = document.getElementById("list-container");
+      updateBadges();
+
+      if (list.length === 0) {
+        box.innerHTML = `<div class="card">目前此分類沒有題目。</div>`;
+        return;
+      }
+
+      box.innerHTML = list.map(card => {
+        const open = !!listOpenMap[card.id];
+        const st = statusMap[card.id];
+        const stBadge = st === "mastered"
+          ? `<span class="status-tag status-mastered">✓ 已記住</span>`
+          : st === "review"
+          ? `<span class="status-tag status-review">↻ 待複習</span>`
+          : "";
+
+        return `
+          <div class="list-item">
+            <div class="list-q-row" onclick="toggleListOne(${card.id})">
+              <div>
+                <div class="meta-left">
+                  <span class="q-num">Q${card.id}</span>
+                  <span class="q-cat">${card.catName}</span>
+                  ${stBadge}
+                </div>
+                <div class="list-q-title">${escapeHtml(card.q)}</div>
+              </div>
+              <button class="icon-btn" style="flex-shrink:0;white-space:nowrap;">${open ? "🙈 收起" : "👁 答案"}</button>
+            </div>
+            ${open ? `
+              <div class="answer-box">
+                <div class="hint-box">💡 提示：${escapeHtml(card.hint)}</div>
+                ${card.ans.map(line => `<div class="answer-point">${line}</div>`).join("")}
+                ${card.code ? `<pre class="code-block">${escapeHtml(card.code)}</pre>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleListOne(id) {
+      listOpenMap[id] = !listOpenMap[id];
+      renderList();
+    }
+
+    function toggleAllList(openState) {
+      CARDS.forEach(c => { listOpenMap[c.id] = openState; });
+      renderList();
+    }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const cur = root.getAttribute("data-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const isDark = cur ? cur === "dark" : prefersDark;
+      const next = isDark ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+    }
+
+    function resetAll() {
+      if (!confirm("確定要重置「React 流程」的學習進度嗎？")) return;
+      statusMap = {};
+      listOpenMap = {};
+      showAns = false;
+      showHint = false;
+      currentIdx = 0;
+      saveProgress();
+      setCategory("all");
+    }
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const touchCard = document.getElementById("touch-card");
+    touchCard.addEventListener("touchstart", e => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    touchCard.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) nextCard();
+        else prevCard();
+      }
+    }, { passive: true });
+
+    document.addEventListener("keydown", e => {
+      if (currentMode !== "flashcard") return;
+      if (e.key === "ArrowRight") nextCard();
+      else if (e.key === "ArrowLeft") prevCard();
+      else if (e.key === " " && e.target === document.body) {
+        e.preventDefault();
+        toggleAnswer();
+      }
+    });
+
+    renderCard();
+  </script>
+</body>
+</html>
