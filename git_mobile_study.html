@@ -153,8 +153,8 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
       background: var(--card-alt);
       padding: 4px;
       border-radius: 12px;
@@ -165,12 +165,13 @@
       border: none;
       background: transparent;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      padding: 9px 4px;
+      padding: 9px 2px;
       border-radius: 9px;
       cursor: pointer;
       transition: all 0.15s ease;
+      white-space: nowrap;
     }
 
     .tab-btn.active {
@@ -429,6 +430,191 @@
       color: var(--muted);
       margin-top: 10px;
     }
+
+    /* Unit Lesson Styles */
+    .unit-goal {
+      background: var(--card-alt);
+      border-left: 3px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin: 10px 0 0 0;
+    }
+
+    .step-pills {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .step-pill {
+      border: 1px solid var(--border);
+      background: var(--card-alt);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 2px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .step-pill.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--primary-fg);
+    }
+
+    .step-pill.done {
+      background: var(--success-soft);
+      border-color: transparent;
+      color: var(--success);
+    }
+
+    .step-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .step-op {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .step-explain {
+      margin-top: 12px;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .cmd-details {
+      margin-top: 12px;
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    .cmd-details summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .choice-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .choice-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      background: var(--card-alt);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      line-height: 1.45;
+    }
+
+    .choice-btn.correct {
+      background: var(--success-soft);
+      border-color: var(--success);
+      color: var(--text);
+    }
+
+    .choice-btn.wrong {
+      background: var(--warning-soft);
+      border-color: var(--warning);
+      color: var(--text);
+    }
+
+    .diff-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    @media (min-width: 460px) {
+      .diff-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .diff-panel {
+      background: var(--card-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .diff-panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+
+    .feedback-box {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .feedback-ok {
+      background: var(--success-soft);
+      border: 1px solid var(--success);
+    }
+
+    .feedback-warn {
+      background: var(--warning-soft);
+      border: 1px solid var(--warning);
+    }
+
+    .step-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .roadmap-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .roadmap-item:first-of-type {
+      border-top: none;
+      padding-top: 4px;
+    }
+
+    .roadmap-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .roadmap-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
   </style>
 </head>
 <body>
@@ -446,20 +632,54 @@
     </div>
 
     <div class="tabs">
-      <button id="tab-flashcard" class="tab-btn active" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-unit" class="tab-btn active" onclick="switchMode('unit')">📖 單元教學</button>
+      <button id="tab-flashcard" class="tab-btn" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
       <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
       <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 流程總覽</button>
     </div>
 
-    <div id="cat-bar" class="cat-bar">
+    <div id="cat-bar" class="cat-bar hidden">
       <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (10)</button>
+      <button id="cat-unit1" class="cat-pill" onclick="setCategory('unit1')">單元 1 (Q1-Q3)</button>
       <button id="cat-core" class="cat-pill" onclick="setCategory('core')">四區與日常 (4)</button>
       <button id="cat-branch" class="cat-pill" onclick="setCategory('branch')">分支與協作 (3)</button>
       <button id="cat-rescue" class="cat-pill" onclick="setCategory('rescue')">還原與衝突 (3)</button>
       <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
     </div>
 
-    <div id="view-flashcard">
+    <!-- VIEW 0: Unit 1 Interactive Lesson -->
+    <div id="view-unit">
+      <div class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span class="q-num">單元 1 / 4</span>
+            <span class="q-cat">實戰手把手・5～8 分鐘</span>
+            <span id="unit1-status-tag" class="status-tag hidden"></span>
+          </div>
+          <span id="unit-summary-badge" class="q-cat">學完 0 / 4 單元</span>
+        </div>
+        <div class="question-text" style="margin-bottom:6px;">同時改了兩個檔案，怎麼只提交其中一個？</div>
+        <div class="unit-goal">
+          <b>學完要會做什麼：</b>看到兩個檔案都有改動時，能選擇這次要提交的檔案，並在提交前確認內容。
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="unit1-step-pills" class="step-pills"></div>
+        <div id="unit1-body"></div>
+        <div class="step-nav">
+          <button id="btn-step-prev" class="btn" onclick="prevUnitStep()">← 上一步</button>
+          <button id="btn-step-next" class="btn btn-primary" onclick="nextUnitStep()">下一步 →</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:10px;">📚 Git 學習冊單元規劃</div>
+        <div id="unit-roadmap"></div>
+      </div>
+    </div>
+
+    <div id="view-flashcard" class="hidden">
       <div id="touch-card" class="card">
         <div class="card-meta">
           <div class="meta-left">
@@ -677,20 +897,34 @@
     ];
 
     const STORAGE_KEY = "agy_git_flashcards_v1";
+    const UNIT_STORAGE_KEY = "agy_git_units_v1";
     const THEME_KEY = "agy_study_theme_v1";
+    const UNIT_ROADMAP = [
+      { id: "unit1", num: 1, title: "選擇這次要提交的改動", goal: "分辨工作目錄與暫存區，核對提交內容", cards: "Q1～Q3", ready: true },
+      { id: "unit2", num: 2, title: "從分支走到 PR", goal: "同步主幹、開分支、推送並發起審查", cards: "Q4～Q5", ready: false },
+      { id: "unit3", num: 3, title: "整合分支與處理衝突", goal: "看懂衝突標記，知道何時選 Merge 或 Rebase", cards: "Q6、Q9", ready: false },
+      { id: "unit4", num: 4, title: "暫存、撤銷與找回", goal: "依照情境選擇 Stash、Revert、Reset 或 Reflog", cards: "Q7、Q8、Q10", ready: false }
+    ];
+
     let statusMap = {};
+    let unitMap = {};
     let listOpenMap = {};
-    let currentMode = "flashcard";
+    let currentMode = "unit";
     let currentCat = "all";
     let currentIdx = 0;
     let showAns = false;
     let showHint = false;
+    let unit1Step = 0;
+    let unit1Pred = null;
+    let unit1Quiz = null;
 
     try {
       const savedTheme = localStorage.getItem(THEME_KEY);
       if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) statusMap = JSON.parse(saved) || {};
+      const savedUnits = localStorage.getItem(UNIT_STORAGE_KEY);
+      if (savedUnits) unitMap = JSON.parse(savedUnits) || {};
     } catch (_) {}
 
     function escapeHtml(str) {
@@ -706,8 +940,15 @@
       } catch (_) {}
     }
 
+    function saveUnits() {
+      try {
+        localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap));
+      } catch (_) {}
+    }
+
     function getFiltered() {
       if (currentCat === "all") return CARDS;
+      if (currentCat === "unit1") return CARDS.filter(c => [1, 2, 3].includes(c.id));
       if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
       return CARDS.filter(c => c.cat === currentCat);
     }
@@ -715,17 +956,30 @@
     function updateBadges() {
       const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
       const review = Object.values(statusMap).filter(v => v === "review").length;
+      const unitsDone = Object.values(unitMap).filter(Boolean).length;
       document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
       document.getElementById("cat-review").textContent = `待複習 (${review})`;
+      const unitBadge = document.getElementById("unit-summary-badge");
+      if (unitBadge) unitBadge.textContent = `學完 ${unitsDone} / ${UNIT_ROADMAP.length} 單元`;
+      const u1Tag = document.getElementById("unit1-status-tag");
+      if (u1Tag) {
+        if (unitMap.unit1) {
+          u1Tag.textContent = "✓ 已完成";
+          u1Tag.className = "status-tag status-mastered";
+        } else {
+          u1Tag.className = "status-tag hidden";
+        }
+      }
     }
 
     function switchMode(mode) {
       currentMode = mode;
-      ["flashcard", "list", "arch"].forEach(m => {
+      ["unit", "flashcard", "list", "arch"].forEach(m => {
         document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
         document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
       });
-      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch");
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch" || mode === "unit");
+      if (mode === "unit") renderUnit();
       if (mode === "flashcard") renderCard();
       if (mode === "list") renderList();
     }
@@ -735,11 +989,192 @@
       currentIdx = 0;
       showAns = false;
       showHint = false;
-      ["all", "core", "branch", "rescue", "review"].forEach(c => {
+      ["all", "unit1", "core", "branch", "rescue", "review"].forEach(c => {
         document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
       });
       if (currentMode === "flashcard") renderCard();
       if (currentMode === "list") renderList();
+    }
+
+    function reviewUnit1Cards() {
+      currentMode = "flashcard";
+      ["unit", "flashcard", "list", "arch"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === "flashcard");
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== "flashcard");
+      });
+      document.getElementById("cat-bar").classList.remove("hidden");
+      setCategory("unit1");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setUnitStep(idx) {
+      unit1Step = Math.max(0, Math.min(4, idx));
+      renderUnit();
+    }
+
+    function prevUnitStep() {
+      if (unit1Step > 0) setUnitStep(unit1Step - 1);
+    }
+
+    function nextUnitStep() {
+      if (unit1Step < 4) setUnitStep(unit1Step + 1);
+    }
+
+    function pickUnit1Pred(choice) {
+      unit1Pred = choice;
+      renderUnit();
+    }
+
+    function pickUnit1Quiz(choice) {
+      unit1Quiz = choice;
+      if (choice === 0) {
+        unitMap.unit1 = true;
+        saveUnits();
+      }
+      renderUnit();
+    }
+
+    function renderUnit() {
+      updateBadges();
+      const stepTitles = ["1. 看改動", "2. 選檔案", "3. 核對提交", "4. 常見卡點", "5. 驗收題"];
+      document.getElementById("unit1-step-pills").innerHTML = stepTitles.map((label, i) => {
+        const cls = i === unit1Step
+          ? "step-pill active"
+          : (i === 4 && unitMap.unit1) ? "step-pill done" : "step-pill";
+        return `<button class="${cls}" onclick="setUnitStep(${i})">${label}</button>`;
+      }).join("");
+
+      const body = document.getElementById("unit1-body");
+      if (unit1Step === 0) {
+        body.innerHTML = `
+          <div class="step-label">步驟 1 / 5・看見改動</div>
+          <div class="step-op">用 <code>git status --short</code> 查看兩個改過的檔案</div>
+          <pre class="code-block"> M README.md
+ M index.html</pre>
+          <div class="step-explain">左欄空白、右欄是 <code>M</code>，代表兩個檔案的改動都還在「工作目錄」，尚未進入暫存區。</div>
+          <details class="cmd-details">
+            <summary>展開完整指令</summary>
+            <pre class="code-block">git status --short
+# 左欄 = 暫存區狀態，右欄 = 工作目錄狀態</pre>
+          </details>
+        `;
+      } else if (unit1Step === 1) {
+        body.innerHTML = `
+          <div class="step-label">步驟 2 / 5・選擇提交內容</div>
+          <div class="step-op">執行 <code>git add README.md</code>，只暫存想提交的檔案</div>
+          <pre class="code-block">M  README.md
+ M index.html</pre>
+          <div class="step-explain"><code>README.md</code> 的 <code>M</code> 移到了左欄（已進暫存區），<code>index.html</code> 的改動仍安穩留在工作目錄。</div>
+          <details class="cmd-details">
+            <summary>展開完整指令</summary>
+            <pre class="code-block">git add README.md
+git status --short</pre>
+          </details>
+        `;
+      } else if (unit1Step === 2) {
+        body.innerHTML = `
+          <div class="step-label">步驟 3 / 5・確認再提交</div>
+          <div class="step-op">先用 <code>git diff --staged</code> 核對，再 <code>git commit</code></div>
+          <pre class="code-block">[main 4f2a9c1] docs: update README
+ 1 file changed, 2 insertions(+)</pre>
+          <div class="step-explain">這次提交只會包含 <code>README.md</code> 的暫存內容；<code>index.html</code> 不會被帶進去，等準備好再另外提交。</div>
+          <details class="cmd-details">
+            <summary>展開完整指令</summary>
+            <pre class="code-block">git diff --staged
+git commit -m "docs: update README"
+git status --short   # 只剩 " M index.html"</pre>
+          </details>
+        `;
+      } else if (unit1Step === 3) {
+        const predHtml = unit1Pred !== null ? `
+          <div class="feedback-box ${unit1Pred === 0 ? "feedback-ok" : "feedback-warn"}">
+            <b>${unit1Pred === 0 ? "✓ 預測正確！" : "↻ 很多人也會猜這個！"}</b>
+            Git 暫存的是<b>執行 <code>git add</code> 當下的快照（第 1 版）</b>。如果也想納入第 2 版，必須再執行一次 <code>git add README.md</code>。
+          </div>
+          <div class="diff-grid">
+            <div class="diff-panel">
+              <div class="diff-panel-title">git diff --staged（這次會提交）</div>
+              <pre class="code-block" style="margin-top:0;">+第 1 版說明（已暫存）</pre>
+            </div>
+            <div class="diff-panel">
+              <div class="diff-panel-title">git diff（未暫存・不會提交）</div>
+              <pre class="code-block" style="margin-top:0;">+第 2 版補充（工作目錄）</pre>
+            </div>
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          <div class="step-label">步驟 4 / 5・常見卡點預測</div>
+          <div class="step-op">暫存 <code>README.md</code> 後又改了一次，這時 <code>git commit</code> 會包含哪一版？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${unit1Pred === 0 ? "correct" : ""}" onclick="pickUnit1Pred(0)">A. 只包含第 1 版（上次 git add 當下的內容）</button>
+            <button class="choice-btn ${unit1Pred === 1 ? "wrong" : ""}" onclick="pickUnit1Pred(1)">B. 包含第 1 版＋剛改好的第 2 版</button>
+          </div>
+          ${predHtml}
+          <details class="cmd-details">
+            <summary>展開完整指令</summary>
+            <pre class="code-block">git diff --staged   # 檢查即將提交的內容
+git diff            # 檢查還沒暫存的新改動
+git add README.md   # 想納入第 2 版需重新暫存</pre>
+          </details>
+        `;
+      } else {
+        const quizFeedback = unit1Quiz === 0 ? `
+          <div class="feedback-box feedback-ok">
+            <b>✓ 答對了！已完成單元 1</b><br />
+            <code>MM README.md</code> 代表左欄有已暫存的版本、右欄又有尚未暫存的新改動；<code> M index.html</code> 尚未暫存。因此現在提交只會帶進 <code>README.md</code> 上次暫存的內容。
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary" style="width:100%;" onclick="reviewUnit1Cards()">👉 複習本單元題卡（Q1～Q3）</button>
+            </div>
+          </div>
+        ` : unit1Quiz !== null ? `
+          <div class="feedback-box feedback-warn">
+            <b>再看一次兩欄的位置：</b><code>git status --short</code> 左欄才是「會被提交的暫存區」，右欄是「還沒暫存的工作目錄」。試著再選一次！
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          <div class="step-label">步驟 5 / 5・單元驗收</div>
+          <div class="step-op">看到以下狀態時，如果現在執行 <code>git commit</code>，會帶進哪些內容？</div>
+          <pre class="code-block">MM README.md
+ M index.html</pre>
+          <div class="choice-list">
+            <button class="choice-btn ${unit1Quiz === 0 ? "correct" : ""}" onclick="pickUnit1Quiz(0)">A. 只帶進 README.md 上次 git add 時的暫存內容</button>
+            <button class="choice-btn ${unit1Quiz === 1 ? "wrong" : ""}" onclick="pickUnit1Quiz(1)">B. 帶進 README.md 包含第二次修改的全部最新內容</button>
+            <button class="choice-btn ${unit1Quiz === 2 ? "wrong" : ""}" onclick="pickUnit1Quiz(2)">C. 同時帶進 README.md 和 index.html 的所有改動</button>
+          </div>
+          ${quizFeedback}
+        `;
+      }
+
+      document.getElementById("btn-step-prev").disabled = unit1Step === 0;
+      document.getElementById("btn-step-prev").style.opacity = unit1Step === 0 ? "0.45" : "1";
+      const nextBtn = document.getElementById("btn-step-next");
+      if (unit1Step === 4) {
+        nextBtn.textContent = "複習 Q1～Q3 →";
+        nextBtn.onclick = reviewUnit1Cards;
+      } else {
+        nextBtn.textContent = "下一步 →";
+        nextBtn.onclick = nextUnitStep;
+      }
+
+      document.getElementById("unit-roadmap").innerHTML = UNIT_ROADMAP.map(u => {
+        const done = !!unitMap[u.id];
+        const tag = done
+          ? `<span class="status-tag status-mastered">✓ 已完成</span>`
+          : u.ready
+          ? `<span class="q-num">進行中</span>`
+          : `<span class="q-cat">規劃中</span>`;
+        return `
+          <div class="roadmap-item">
+            <div>
+              <div class="roadmap-title">${u.num}. ${u.title}</div>
+              <div class="roadmap-sub">${u.goal}・對應 ${u.cards}</div>
+            </div>
+            <div style="flex-shrink:0;">${tag}</div>
+          </div>
+        `;
+      }).join("");
     }
 
     function renderCard() {
@@ -907,14 +1342,20 @@
     }
 
     function resetAll() {
-      if (!confirm("確定要重置「Git 流程」的學習進度嗎？")) return;
+      if (!confirm("確定要重置「Git 流程」的單元與題卡進度嗎？")) return;
       statusMap = {};
+      unitMap = {};
       listOpenMap = {};
       showAns = false;
       showHint = false;
       currentIdx = 0;
+      unit1Step = 0;
+      unit1Pred = null;
+      unit1Quiz = null;
       saveProgress();
+      saveUnits();
       setCategory("all");
+      if (currentMode === "unit") renderUnit();
     }
 
     let touchStartX = 0;
@@ -944,6 +1385,7 @@
       }
     });
 
+    renderUnit();
     renderCard();
   </script>
 </body>

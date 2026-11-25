@@ -294,6 +294,8 @@
         desc: "核心四區流向、Feature Branch + PR 協作、Merge vs Rebase、Reset / Revert / Reflog 急救",
         href: "git_mobile_study.html",
         storageKey: "agy_git_flashcards_v1",
+        unitStorageKey: "agy_git_units_v1",
+        unitTotal: 4,
         total: 10,
         accent: "#ea580c"
       },
@@ -345,15 +347,31 @@
       }
     }
 
+    function readUnits(key) {
+      if (!key) return 0;
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return 0;
+        const map = JSON.parse(raw) || {};
+        return Object.values(map).filter(Boolean).length;
+      } catch (_) {
+        return 0;
+      }
+    }
+
     function renderDecks() {
       let totalMastered = 0;
       let totalCards = 0;
 
       const html = DECKS.map(deck => {
         const { mastered, review } = readStats(deck.storageKey);
+        const unitsDone = readUnits(deck.unitStorageKey);
         totalMastered += mastered;
         totalCards += deck.total;
         const pct = Math.round((mastered / deck.total) * 100);
+        const unitPill = deck.unitTotal
+          ? `<span class="pill ${unitsDone > 0 ? 'pill-done' : ''}">學完 ${unitsDone} / ${deck.unitTotal} 單元</span>`
+          : "";
 
         return `
           <a class="deck-card" href="${deck.href}" style="--accent:${deck.accent};">
@@ -364,7 +382,8 @@
             <p class="deck-desc">${deck.desc}</p>
             <div class="deck-meta">
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <span class="pill ${mastered === deck.total ? 'pill-done' : ''}">已記住 ${mastered} / ${deck.total}</span>
+                ${unitPill}
+                <span class="pill ${mastered === deck.total ? 'pill-done' : ''}">已記住 ${mastered} / ${deck.total} 張卡</span>
                 ${review > 0 ? `<span class="pill pill-review">待複習 ${review}</span>` : ""}
               </div>
               <span style="color:var(--muted);">${pct}%</span>
