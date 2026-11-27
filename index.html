@@ -572,6 +572,7 @@
       const target = document.querySelector(`.deck-card[data-stage="${stageNum}"]`);
       if (!target) return;
       target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.focus({ preventScroll: true });
       target.classList.add("highlight-pulse");
       setTimeout(() => target.classList.remove("highlight-pulse"), 1400);
     }

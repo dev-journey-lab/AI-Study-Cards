@@ -266,10 +266,10 @@
           <button id="btn-sec-next" class="btn btn-primary" onclick="nextSecStep()">下一步 →</button>
         </div>
         <details class="cmd-details" style="margin-top:12px;">
-          <summary>📝 階段實作核對（可交出的檢查證據）</summary>
+          <summary>📝 階段實作核對（目前靜態版可交出的檢查證據）</summary>
           <div style="margin-top:8px;line-height:1.55;">
-            • 檢查 <code>.gitignore</code> 已列入 <code>.env</code>，且前端程式碼無任何 <code>sk-</code> / <code>Bearer</code> 硬編碼密鑰。<br />
-            • 用 <code>curl</code> 連打受保護端點，確認超過額度時後端回傳 <code>HTTP 429</code> 與 <code>Retry-After</code>。
+            • 檢查 <code>.gitignore</code> 已列入 <code>.env</code>（可用 <code>git check-ignore -v .env</code> 驗證），且所有前端 <code>.html</code> 無硬編碼密鑰。<br />
+            • 註：本倉庫目前為靜態網頁版，尚無後端 <code>/api/explain</code>；限流 <code>429</code> 與 <code>Retry-After</code> 實機壓測將於後端練習版加入後進行。
           </div>
         </details>
       </div>
@@ -342,9 +342,9 @@
 
       <div class="card">
         <div class="q-num" style="display:inline-block;margin-bottom:8px;">3. 金鑰誤推公開 GitHub 急救 SOP</div>
-        <div class="answer-point">• <b>第 1 秒</b>：立刻到 API 供應商後台<b>吊銷並重發（Revoke &amp; Rotate）</b>金鑰（光刪 commit 沒用）。</div>
-        <div class="answer-point">• <b>第 2 步</b>：把 <code>.env</code> 加進 <code>.gitignore</code>，開啟 GitHub Secret Scanning / Push Protection。</div>
-        <div class="answer-point">• <b>第 3 步</b>：設定每月消費硬上限（Billing Cap）與環境隔離（dev / prod 分開金鑰）。</div>
+        <div class="answer-point">• <b>第 1 步（止血）</b>：立刻到 API 供應商後台<b>吊銷並重發（Revoke &amp; Rotate）</b>金鑰，並檢查帳單與異常呼叫日誌。</div>
+        <div class="answer-point">• <b>第 2 步（停止追蹤與忽略）</b>：若 <code>.env</code> 已被追蹤，須先 <code>git rm --cached .env</code> 停止追蹤，再加入 <code>.gitignore</code> 並用 <code>git check-ignore -v .env</code> 確認生效。</div>
+        <div class="answer-point">• <b>第 3 步（清理與預防）</b>：必要時用 <code>git filter-repo</code> 清理既有歷史，並開啟 GitHub Push Protection 與每月消費上限。</div>
       </div>
     </div>
   </div>
@@ -367,13 +367,13 @@
         id: 2,
         cat: "fe",
         catName: "前端防護",
-        q: "什麼是 XSS（跨站腳本攻擊）？在我們寫學習卡的 HTML/JS 時怎麼預防？",
-        hint: "想一想我們之前在 renderList() 裡特別補上的 escapeHtml()。",
+        q: "什麼是 XSS（跨站腳本攻擊）？在前端輸出純文字、屬性、URL 與富文本時分別該怎麼防護？",
+        hint: "純文字最安全的是 textContent；不同輸出位置（文字節點／屬性／URL／HTML）需要不同處理方式。",
         ans: [
-          "• <b>原理</b>：攻擊者把惡意 <code>&lt;script&gt;</code> 或 <code>&lt;img src=x onerror=...&gt;</code> 塞進輸入欄位，若前端直接用 <code>innerHTML</code> 渲染，瀏覽器就會執行這段惡意程式偷走資料。",
-          "• <b>預防做法</b>：優先用 <code>textContent</code>（純文字不解析 HTML）；若需組 HTML，必先經過 <code>escapeHtml()</code> 跳脫，並搭配後端回傳 <b>CSP（Content-Security-Policy）</b> 標頭限制腳本來源。"
+          "• <b>原理</b>：攻擊者把惡意 <code>&lt;script&gt;</code>、事件屬性或 <code>javascript:</code> 連結注入資料，若未依輸出位置正確處理，瀏覽器就會執行惡意程式。",
+          "• <b>依情境防護（OWASP 原則）</b>：1. <b>純文字</b>優先用 <code>textContent</code>（本專案的 <code>escapeHtml()</code> 僅跳脫純文字中的 <code>&amp; &lt; &gt;</code>，不含引號）；2. <b>HTML 屬性</b>需另做屬性編碼；3. <b>URL</b> 須限制只允許 <code>https://</code>／<code>http://</code>；4. <b>需保留格式的富文本 HTML</b> 應交給成熟 sanitizer（如 DOMPurify），並搭配 <b>CSP</b> 作為縱深防禦。"
         ],
-        code: "✗ el.innerHTML = userInput;          // 危險：可能執行惡意腳本\n✓ el.textContent = userInput;        // 安全：純文字渲染\n✓ el.innerHTML = escapeHtml(input);  // 安全：先跳脫 < > & \""
+        code: "✗ el.innerHTML = userInput;    // 危險：直接當 HTML 解析\n✓ el.textContent = userInput;  // 安全：純文字輸出\n// 屬性 / URL / 富文本 HTML 各需對應編碼或 sanitizer，不可混用同一套跳脫"
       },
       {
         id: 3,
@@ -439,13 +439,13 @@
         id: 8,
         cat: "key",
         catName: "金鑰管控",
-        q: "如果不小心把含有正式環境 API Key 的 .env 推上了公開 GitHub，只做一次「刪除檔案再 commit」夠嗎？",
-        hint: "Git 的歷史紀錄與自動化掃描爬蟲會發生什麼事？",
+        q: "如果不小心把含有正式環境 API Key 的 .env 推上了公開 GitHub，只加入 .gitignore 或刪檔 commit 夠嗎？",
+        hint: "已被 Git 追蹤的檔案，光寫進 .gitignore 會立刻停止追蹤嗎？舊 commit 歷史呢？",
         ans: [
-          "• <b>完全不夠！</b>舊 commit 仍留在 Git 歷史裡，且網路上的自動化爬蟲通常在推送後<b>幾秒內</b>就會把公開的金鑰抓走盜刷。",
-          "• <b>正確順序</b>：1. <b>立刻吊銷並換發新金鑰（Revoke &amp; Rotate）</b>（最重要！）；2. 檢查帳單與異常呼叫日誌；3. 把 <code>.env</code> 加入 <code>.gitignore</code> 並清理歷史紀錄。"
+          "• <b>完全不夠！</b>公開金鑰幾秒內就會被爬蟲抓走，而且<b>已被 Git 追蹤的 <code>.env</code> 就算寫進 <code>.gitignore</code> 仍會繼續被追蹤</b>。",
+          "• <b>正確順序</b>：1. <b>立刻吊銷並重發新金鑰（Revoke &amp; Rotate）</b>並查帳單；2. 執行 <b><code>git rm --cached .env</code> 停止追蹤</b>，再加入 <code>.gitignore</code> 並用 <code>git check-ignore -v .env</code> 驗證；3. 必要時以 <code>git filter-repo</code> 清理既有歷史並重推。"
         ],
-        code: "緊急順序：1. 立刻吊銷換新金鑰 (Revoke) -> 2. 查帳單日誌 -> 3. 補 .gitignore 與清歷史"
+        code: "1. 立刻吊銷換新金鑰 (Revoke & Rotate)\n2. git rm --cached .env && echo \".env\" >> .gitignore && git check-ignore -v .env\n3. 視需要以 git filter-repo 清理既有提交歷史"
       }
     ];
 
@@ -597,16 +597,18 @@ git check-ignore -v .env   # 確認 Git 確實忽略 .env</pre>
         `;
       } else if (secStep === 2) {
         body.innerHTML = `
-          <div class="step-label">步驟 3 / 5・後端加上限流（Rate Limit）</div>
-          <div class="step-op">用 <code>curl</code> 連打 20 次 API，確認超過額度時回傳 <code>429</code></div>
-          <pre class="code-block">HTTP/1.1 429 Too Many Requests
+          <div class="step-label">步驟 3 / 5・後端加上限流（示意輸出）</div>
+          <div class="step-op">連打 10 次受保護 API，超過額度時後端應回傳 <code>429</code> 與 <code>Retry-After</code></div>
+          <pre class="code-block"># 【示意輸出：靜態版尚無後端 /api/explain】
+HTTP/1.1 429 Too Many Requests
 Retry-After: 60
 {"code":"RATE_LIMITED","message":"請 60 秒後再試"}</pre>
-          <div class="step-explain">限流不只擋暴力破解，也能保護你的後端與 AI 額度不被單一腳本瞬間打爆。</div>
+          <div class="step-explain">限流不只擋暴力破解，也能保護你的後端與 AI 額度不被單一腳本瞬間打爆；檢查標頭時要看到 <code>429</code> 與 <code>Retry-After</code>。</div>
           <details class="cmd-details">
-            <summary>展開完整指令</summary>
-            <pre class="code-block">for i in {1..10}; do
-  curl -s -o /dev/null -w "%{http_code}\n" https://your-api.example.com/api/explain
+            <summary>展開完整指令（未來接上後端練習版時使用）</summary>
+            <pre class="code-block"># 連送 10 次請求並檢視狀態碼與 Retry-After 標頭
+for i in {1..10}; do
+  curl -s -D - -o /dev/null http://localhost:8787/api/explain | grep -iE "^(HTTP/|Retry-After:)"
 done</pre>
           </details>
         `;
@@ -642,7 +644,7 @@ done</pre>
         const fb = showPassed ? `
           <div class="feedback-box feedback-ok">
             <b>✓ ${secQuiz === 0 ? "答對了！已完成資安單元 1" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
-            公開儲存庫上的金鑰幾秒內就會被自動化爬蟲掃走，光刪檔案無法讓已流出的密鑰失效；必須<b>第一時間吊銷並重發金鑰</b>，再補 <code>.gitignore</code> 與檢查帳單。
+            公開儲存庫上的金鑰幾秒內就會被自動化爬蟲掃走，必須<b>第一時間吊銷並重發金鑰</b>；接著用 <code>git rm --cached .env</code> 停止追蹤、補進 <code>.gitignore</code>（用 <code>git check-ignore -v .env</code> 確認），必要時再清理既有歷史並查帳單。
             <div style="margin-top:10px;">
               <button class="btn btn-primary" style="width:100%;" onclick="reviewSecCards()">👉 複習資安與 API 防護題卡（8 題）</button>
             </div>
