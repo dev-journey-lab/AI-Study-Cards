@@ -1349,7 +1349,7 @@ git status --short   # 會顯示 "UU index.html"（雙邊皆修改衝突）</pre
             <div class="step-op">打開 <code>index.html</code>，辨識兩邊各自的內容</div>
             <pre class="code-block">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
 0 / 54 題（0%）
-=======
+&#61;======
 0 / 56 題（0%）
 &gt;&gt;&gt;&gt;&gt;&gt;&gt; feat/update-count</pre>
             <div class="step-explain"><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> 到 <code>=======</code> 是目前分支的版本；<code>=======</code> 到 <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> 是要合進來的分支版本。</div>
@@ -1416,7 +1416,7 @@ git commit</pre>
             <div class="step-op">打開衝突的 <code>index.html</code> 看到以下內容，正確的解決順序是什麼？</div>
             <pre class="code-block">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
 0 / 54 題（0%）
-=======
+&#61;======
 0 / 56 題（0%）
 &gt;&gt;&gt;&gt;&gt;&gt;&gt; feat/update-count</pre>
             <div class="choice-list">
@@ -1433,11 +1433,12 @@ git commit</pre>
             <div class="step-label">步驟 1 / 5・改到一半要切分支：git stash</div>
             <div class="step-op">功能寫到一半還不想 commit，先用 <code>git stash</code> 收進抽屜</div>
             <pre class="code-block">Saved working directory and index state On feat/u4: WIP: unit4</pre>
-            <div class="step-explain">工作目錄瞬間恢復乾淨，就能安心切去修急件；修完切回原分支再 <code>git stash pop</code> 取回進度。</div>
+            <div class="step-explain">此例預設只暫存<b>已追蹤檔案</b>的改動，讓工作目錄恢復乾淨好切去修急件；若要連未追蹤的新檔案一併收進抽屜，加上 <code>-u</code>。修完切回再用 <code>git stash pop</code> 取回。</div>
             <details class="cmd-details">
               <summary>展開完整指令</summary>
-              <pre class="code-block">git stash push -m "WIP: unit4"
-git switch main   # 去修急件
+              <pre class="code-block">git stash push -m "WIP: unit4"       # 僅暫存已追蹤檔案
+git stash push -u -m "WIP: +newfile" # 連未追蹤的新檔一併暫存
+git switch main                      # 去修急件
 git switch feat/u4 && git stash pop</pre>
             </details>
           `;
@@ -1496,23 +1497,27 @@ git push origin main</pre>
           `;
         } else {
           const showPassed = quiz === 0 || (quiz === null && unitMap.unit4);
+          const allFourDone = ["unit1", "unit2", "unit3", "unit4"].every(u => !!unitMap[u]);
+          const u4PassTitle = quiz === 0
+            ? (allFourDone ? "答對了！已完成單元 4（Git 四大單元全破！）" : "答對了！已完成單元 4")
+            : (allFourDone ? "已完成全部 4 個單元（可重新作答或直接複習題卡）" : "已完成單元 4（可重新作答或直接複習題卡）");
           const quizFeedback = showPassed ? `
             <div class="feedback-box feedback-ok">
-              <b>✓ ${quiz === 0 ? "答對了！已完成單元 4（Git 四大單元全破！）" : "已完成單元 4（可重新作答或直接複習題卡）"}</b><br />
-              看到 <code>up to date with 'origin/main'</code> 代表這筆錯誤提交已經推上遠端主幹，必須用 <code>git revert</code> 新增反向提交，不可用 <code>reset --hard</code> 改寫主幹歷史。
+              <b>✓ ${u4PassTitle}</b><br />
+              已先 <code>git fetch origin</code> 且顯示 <code>up to date with 'origin/main'</code>，代表這筆 <code>HEAD</code> 錯誤提交已經推上遠端主幹，必須用 <code>git revert HEAD</code> 新增反向提交，不可用 <code>reset --hard</code> 改寫主幹歷史。
               <div style="margin-top:10px;">
                 <button class="btn btn-primary" style="width:100%;" onclick="reviewUnitCards('unit4')">👉 複習本單元題卡（Q7、Q8、Q10）</button>
               </div>
             </div>
           ` : quiz !== null ? `
             <div class="feedback-box feedback-warn">
-              <b>看輸出證據：</b><code>up to date with 'origin/main'</code> 表示錯誤提交已經推上遠端共用主幹。哪個指令能「不改寫歷史」安全撤銷？
+              <b>看輸出證據：</b>已先 <code>fetch</code> 且 <code>up to date with 'origin/main'</code>，代表 <code>HEAD</code> 這筆錯誤提交已經推上遠端共用主幹。哪個指令能「不改寫歷史」安全撤銷？
             </div>
           ` : "";
 
           body.innerHTML = `
             <div class="step-label">步驟 5 / 5・單元驗收</div>
-            <div class="step-op">剛發現上一筆提交改壞了首頁，執行 <code>git status</code> 看到以下輸出，該用哪個指令安全撤銷？</div>
+            <div class="step-op">剛發現目前 <code>HEAD</code> 這筆提交改壞了首頁，先跑完 <code>git fetch origin</code> 後再執行 <code>git status</code> 看到以下輸出，該用哪個指令安全撤銷？</div>
             <pre class="code-block">On branch main
 Your branch is up to date with 'origin/main'.</pre>
             <div class="choice-list">
