@@ -465,7 +465,7 @@
           "• <b>2. 分頁筆數驗證與上限</b>：未帶時預設 <code>20</code>，只接受<b>正整數</b>（<code>-1</code>、<code>1.5</code>、非數字回 <code>400</code>），合法值超過 <code>50</code> 則截斷為 <code>50</code>，防一次撈爆資料庫。",
           "• <b>3. 兩層逾時與取消</b>：<code>server.requestTimeout</code> 只限制「接收請求」時間（防 Slowloris）；請求收完後，資料庫與第三方 API 須各自設逾時與取消（如 DB <code>statement_timeout</code>、<code>AbortSignal.timeout(5000)</code>）。"
         ],
-        code: "// 設定舉例（Node / Express）\napp.use(express.json({ limit: '1mb' }));\nconst raw = req.query.limit;\nif (raw !== undefined && (!/^\\d+$/.test(raw) || Number(raw) < 1)) return res.status(400).end();\nconst limit = raw === undefined ? 20 : Math.min(Number(raw), 50);\nserver.requestTimeout = 10_000; // 僅限接收請求；下游改用 AbortSignal.timeout(5000) 與 DB statement_timeout"
+        code: "// 設定舉例（Node / Express）\napp.use(express.json({ limit: '1mb' }));\nconst raw = req.query.limit;\nif (raw !== undefined && (typeof raw !== 'string' || !/^\\d+$/.test(raw) || Number(raw) < 1)) return res.status(400).end();\nconst limit = raw === undefined ? 20 : Math.min(Number(raw), 50);\nserver.requestTimeout = 10_000; // 僅限接收請求；下游改用 AbortSignal.timeout(5000) 與 DB statement_timeout"
       },
       {
         id: 10,
@@ -752,8 +752,8 @@ POST /api/explain  ->  5 req/min/user (須登入 + Turnstile 後端驗 token)</p
             <div class="step-op">驗證 Body 大小、正整數分頁上限，並分開設定接收請求與下游呼叫逾時</div>
             <pre class="code-block">// 【設定舉例】Node / Express 入口防護
 app.use(express.json({ limit: "1mb" }));             // 1. Body 上限
-const raw = req.query.limit;                         // 2. 分頁驗證：缺省 20、只收正整數，其餘回 400
-if (raw !== undefined && (!/^\\d+$/.test(raw) || Number(raw) < 1)) return res.status(400).end();
+const raw = req.query.limit;                         // 2. 分頁驗證：缺省 20、只收正整數字串，其餘（含陣列／物件）回 400
+if (raw !== undefined && (typeof raw !== "string" || !/^\\d+$/.test(raw) || Number(raw) < 1)) return res.status(400).end();
 const limit = raw === undefined ? 20 : Math.min(Number(raw), 50);
 server.requestTimeout = 10_000;                      // 3a. 僅限「接收請求」逾時（防 Slowloris）
 fetch(upstream, { signal: AbortSignal.timeout(5000) }); // 3b. 下游 API / DB 須各自設逾時與取消</pre>
