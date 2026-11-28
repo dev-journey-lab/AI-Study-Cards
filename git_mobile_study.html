@@ -642,6 +642,8 @@
       <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (10)</button>
       <button id="cat-unit1" class="cat-pill" onclick="setCategory('unit1')">單元 1 (Q1-Q3)</button>
       <button id="cat-unit2" class="cat-pill" onclick="setCategory('unit2')">單元 2 (Q4-Q5)</button>
+      <button id="cat-unit3" class="cat-pill" onclick="setCategory('unit3')">單元 3 (Q6,Q9)</button>
+      <button id="cat-unit4" class="cat-pill" onclick="setCategory('unit4')">單元 4 (Q7,8,10)</button>
       <button id="cat-core" class="cat-pill" onclick="setCategory('core')">四區與日常 (4)</button>
       <button id="cat-branch" class="cat-pill" onclick="setCategory('branch')">分支與協作 (3)</button>
       <button id="cat-rescue" class="cat-pill" onclick="setCategory('rescue')">還原與衝突 (3)</button>
@@ -653,6 +655,8 @@
       <div class="grade-grid" style="margin-bottom:12px;">
         <button id="btn-sel-unit1" class="btn btn-primary" onclick="selectUnit('unit1')">單元 1：選改動</button>
         <button id="btn-sel-unit2" class="btn" onclick="selectUnit('unit2')">單元 2：分支到 PR</button>
+        <button id="btn-sel-unit3" class="btn" onclick="selectUnit('unit3')">單元 3：衝突與整合</button>
+        <button id="btn-sel-unit4" class="btn" onclick="selectUnit('unit4')">單元 4：撤銷與找回</button>
       </div>
 
       <div class="card">
@@ -909,8 +913,8 @@
     const UNIT_ROADMAP = [
       { id: "unit1", num: 1, title: "選擇這次要提交的改動", goal: "分辨工作目錄與暫存區，核對提交內容", cards: "Q1～Q3", ready: true },
       { id: "unit2", num: 2, title: "從分支走到 PR", goal: "同步主幹、開分支、推送並發起審查", cards: "Q4～Q5", ready: true },
-      { id: "unit3", num: 3, title: "整合分支與處理衝突", goal: "看懂衝突標記，知道何時選 Merge 或 Rebase", cards: "Q6、Q9", ready: false },
-      { id: "unit4", num: 4, title: "暫存、撤銷與找回", goal: "依照情境選擇 Stash、Revert、Reset 或 Reflog", cards: "Q7、Q8、Q10", ready: false }
+      { id: "unit3", num: 3, title: "整合分支與處理衝突", goal: "看懂衝突標記，知道何時選 Merge 或 Rebase", cards: "Q6、Q9", ready: true },
+      { id: "unit4", num: 4, title: "暫存、撤銷與找回", goal: "依照情境選擇 Stash、Revert、Reset 或 Reflog", cards: "Q7、Q8、Q10", ready: true }
     ];
 
     let statusMap = {};
@@ -922,9 +926,9 @@
     let showAns = false;
     let showHint = false;
     let activeUnit = "unit1";
-    let unitStepMap = { unit1: 0, unit2: 0 };
-    let unitPredMap = { unit1: null, unit2: null };
-    let unitQuizMap = { unit1: null, unit2: null };
+    let unitStepMap = { unit1: 0, unit2: 0, unit3: 0, unit4: 0 };
+    let unitPredMap = { unit1: null, unit2: null, unit3: null, unit4: null };
+    let unitQuizMap = { unit1: null, unit2: null, unit3: null, unit4: null };
 
     try {
       const savedTheme = localStorage.getItem(THEME_KEY);
@@ -973,6 +977,8 @@
       if (currentCat === "all") return CARDS;
       if (currentCat === "unit1") return CARDS.filter(c => [1, 2, 3].includes(c.id));
       if (currentCat === "unit2") return CARDS.filter(c => [4, 5].includes(c.id));
+      if (currentCat === "unit3") return CARDS.filter(c => [6, 9].includes(c.id));
+      if (currentCat === "unit4") return CARDS.filter(c => [7, 8, 10].includes(c.id));
       if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
       return CARDS.filter(c => c.cat === currentCat);
     }
@@ -1013,7 +1019,7 @@
       currentIdx = 0;
       showAns = false;
       showHint = false;
-      ["all", "unit1", "unit2", "core", "branch", "rescue", "review"].forEach(c => {
+      ["all", "unit1", "unit2", "unit3", "unit4", "core", "branch", "rescue", "review"].forEach(c => {
         document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
       });
       if (currentMode === "flashcard") renderCard();
@@ -1056,12 +1062,39 @@
 
     function pickUnitQuiz(choice) {
       unitQuizMap[activeUnit] = choice;
-      const correctAnswer = activeUnit === "unit1" ? 0 : 1;
-      if (choice === correctAnswer) {
+      const answerKey = { unit1: 0, unit2: 1, unit3: 1, unit4: 0 };
+      if (choice === answerKey[activeUnit]) {
         saveUnitDone(activeUnit);
       }
       renderUnit();
     }
+
+    const UNIT_META = {
+      unit1: {
+        pill: "單元 1 / 4",
+        title: "同時改了兩個檔案，怎麼只提交其中一個？",
+        goal: "<b>學完要會做什麼：</b>看到兩個檔案都有改動時，能選擇這次要提交的檔案，並在提交前確認內容。",
+        steps: ["1. 看改動", "2. 選檔案", "3. 核對提交", "4. 常見卡點", "5. 驗收題"]
+      },
+      unit2: {
+        pill: "單元 2 / 4",
+        title: "怎麼從乾淨的 main 開分支，一路走到發起 PR？",
+        goal: "<b>學完要會做什麼：</b>開發新改動前能先同步主幹、開立獨立分支、推送並建立 Pull Request 給審查者驗收。",
+        steps: ["1. 同步主幹", "2. 開立分支", "3. 推送開 PR", "4. 常見卡點", "5. 驗收題"]
+      },
+      unit3: {
+        pill: "單元 3 / 4",
+        title: "合併分支發生衝突怎麼解？何時選 Merge 或 Rebase？",
+        goal: "<b>學完要會做什麼：</b>看懂衝突三段標記、手動整理並完成合併提交，且知道共用分支為何不可 Rebase。",
+        steps: ["1. 遇見衝突", "2. 看懂標記", "3. 解決提交", "4. 常見卡點", "5. 驗收題"]
+      },
+      unit4: {
+        pill: "單元 4 / 4",
+        title: "改到一半、提交錯了、誤刪了，各自該用哪一招？",
+        goal: "<b>學完要會做什麼：</b>依改動階段（未提交／未推送／已推送／誤刪），正確選用 Stash、Reset、Revert 或 Reflog。",
+        steps: ["1. 暫存抽屜", "2. 未推撤銷", "3. 已推還原", "4. 常見卡點", "5. 驗收題"]
+      }
+    };
 
     function renderUnit() {
       updateBadges();
@@ -1069,23 +1102,16 @@
       const pred = unitPredMap[activeUnit];
       const quiz = unitQuizMap[activeUnit];
 
-      document.getElementById("btn-sel-unit1").className = activeUnit === "unit1" ? "btn btn-primary" : "btn";
-      document.getElementById("btn-sel-unit2").className = activeUnit === "unit2" ? "btn btn-primary" : "btn";
+      ["unit1", "unit2", "unit3", "unit4"].forEach(u => {
+        document.getElementById(`btn-sel-${u}`).className = activeUnit === u ? "btn btn-primary" : "btn";
+      });
 
-      const isU1 = activeUnit === "unit1";
-      document.getElementById("unit-num-pill").textContent = isU1 ? "單元 1 / 4" : "單元 2 / 4";
-      document.getElementById("unit-title").textContent = isU1
-        ? "同時改了兩個檔案，怎麼只提交其中一個？"
-        : "怎麼從乾淨的 main 開分支，一路走到發起 PR？";
-      document.getElementById("unit-goal-text").innerHTML = isU1
-        ? "<b>學完要會做什麼：</b>看到兩個檔案都有改動時，能選擇這次要提交的檔案，並在提交前確認內容。"
-        : "<b>學完要會做什麼：</b>開發新改動前能先同步主幹、開立獨立分支、推送並建立 Pull Request 給審查者驗收。";
+      const meta = UNIT_META[activeUnit];
+      document.getElementById("unit-num-pill").textContent = meta.pill;
+      document.getElementById("unit-title").textContent = meta.title;
+      document.getElementById("unit-goal-text").innerHTML = meta.goal;
 
-      const stepTitles = isU1
-        ? ["1. 看改動", "2. 選檔案", "3. 核對提交", "4. 常見卡點", "5. 驗收題"]
-        : ["1. 同步主幹", "2. 開立分支", "3. 推送開 PR", "4. 常見卡點", "5. 驗收題"];
-
-      document.getElementById("unit1-step-pills").innerHTML = stepTitles.map((label, i) => {
+      document.getElementById("unit1-step-pills").innerHTML = meta.steps.map((label, i) => {
         const cls = i === step
           ? "step-pill active"
           : (i === 4 && unitMap[activeUnit]) ? "step-pill done" : "step-pill";
@@ -1093,7 +1119,7 @@
       }).join("");
 
       const body = document.getElementById("unit1-body");
-      if (isU1) {
+      if (activeUnit === "unit1") {
         if (step === 0) {
           body.innerHTML = `
             <div class="step-label">步驟 1 / 5・看見改動</div>
@@ -1199,7 +1225,7 @@ git diff            # 檢查還沒暫存的新改動（第 2 版）</pre>
             ${quizFeedback}
           `;
         }
-      } else {
+      } else if (activeUnit === "unit2") {
         if (step === 0) {
           body.innerHTML = `
             <div class="step-label">步驟 1 / 5・先同步主幹</div>
@@ -1302,6 +1328,201 @@ Your branch is behind 'origin/main' by 2 commits.</pre>
             ${quizFeedback}
           `;
         }
+      } else if (activeUnit === "unit3") {
+        if (step === 0) {
+          body.innerHTML = `
+            <div class="step-label">步驟 1 / 5・遇見合併衝突</div>
+            <div class="step-op">兩條分支都改了 <code>index.html</code> 同一行總題數，執行 <code>git merge</code> 會怎樣？</div>
+            <pre class="code-block">Auto-merging index.html
+CONFLICT (content): Merge conflict in index.html
+Automatic merge failed; fix conflicts and then commit the result.</pre>
+            <div class="step-explain">Git 無法替你決定要留 54 題還是 56 題，所以暫停合併，等待你手動確認。</div>
+            <details class="cmd-details">
+              <summary>展開完整指令</summary>
+              <pre class="code-block">git merge feat/update-count
+git status --short   # 會顯示 "UU index.html"（雙邊皆修改衝突）</pre>
+            </details>
+          `;
+        } else if (step === 1) {
+          body.innerHTML = `
+            <div class="step-label">步驟 2 / 5・看懂衝突三段標記</div>
+            <div class="step-op">打開 <code>index.html</code>，辨識兩邊各自的內容</div>
+            <pre class="code-block">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+0 / 54 題（0%）
+=======
+0 / 56 題（0%）
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feat/update-count</pre>
+            <div class="step-explain"><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> 到 <code>=======</code> 是目前分支的版本；<code>=======</code> 到 <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> 是要合進來的分支版本。</div>
+          `;
+        } else if (step === 2) {
+          body.innerHTML = `
+            <div class="step-label">步驟 3 / 5・刪標記、暫存並完成提交</div>
+            <div class="step-op">整理成正確內容並刪光衝突符號後，執行 <code>git add</code> 與 <code>git commit</code></div>
+            <pre class="code-block">[main 9c4d1e2] Merge branch 'feat/update-count'</pre>
+            <div class="step-explain">一定要把 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>、<code>=======</code>、<code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> 三行標記全刪掉，再 <code>git add index.html</code> 告訴 Git 衝突已解。</div>
+            <details class="cmd-details">
+              <summary>展開完整指令</summary>
+              <pre class="code-block"># 1. 編輯 index.html，留下正確版本並刪掉所有衝突標記
+# 2. 標記已解決並提交
+git add index.html
+git commit</pre>
+            </details>
+          `;
+        } else if (step === 3) {
+          const predHtml = pred !== null ? `
+            <div class="feedback-box ${pred === 0 ? "feedback-ok" : "feedback-warn"}">
+              <b>${pred === 0 ? "✓ 判斷正確！" : "↻ 共用分支做 Rebase 會害同事歷史分歧！"}</b>
+              <code>git rebase</code> 會改寫既有 Commit Hash；<b>只要分支已經推上遠端並與他人共用，一律用 <code>git merge</code></b>，不改寫共同歷史。
+            </div>
+            <div class="diff-grid">
+              <div class="diff-panel">
+                <div class="diff-panel-title">git merge（共用分支安全）</div>
+                <pre class="code-block" style="margin-top:0;">保留原 Hash 與分叉紀錄\n新增 1 筆 Merge Commit</pre>
+              </div>
+              <div class="diff-panel">
+                <div class="diff-panel-title">git rebase（只限個人未共用分支）</div>
+                <pre class="code-block" style="margin-top:0;">重播成乾淨直線歷史\n但會改寫所有 Commit Hash</pre>
+              </div>
+            </div>
+          ` : "";
+          body.innerHTML = `
+            <div class="step-label">步驟 4 / 5・常見卡點預測（Merge vs Rebase）</div>
+            <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>分支 <code>feat/shared-ui</code> 已經推上 GitHub，而且隊友也正在這條分支上一起提交。</div>
+            <div class="step-op">現在想把最新 <code>main</code> 整合進這條共用分支，應該選哪一種？</div>
+            <div class="choice-list">
+              <button class="choice-btn ${pred === 0 ? "correct" : ""}" onclick="pickUnitPred(0)">A. 用 git merge main（不改寫既有 Hash，最安全）</button>
+              <button class="choice-btn ${pred === 1 ? "wrong" : ""}" onclick="pickUnitPred(1)">B. 用 git rebase main 再 git push --force 覆蓋遠端</button>
+            </div>
+            ${predHtml}
+          `;
+        } else {
+          const showPassed = quiz === 1 || (quiz === null && unitMap.unit3);
+          const quizFeedback = showPassed ? `
+            <div class="feedback-box feedback-ok">
+              <b>✓ ${quiz === 1 ? "答對了！已完成單元 3" : "已完成單元 3（可重新作答或直接複習題卡）"}</b><br />
+              解決衝突三部曲：留下正確內容並刪光所有衝突標記 → <code>git add</code> 通知 Git 已處理 → <code>git commit</code> 完成合併。
+              <div style="margin-top:10px;">
+                <button class="btn btn-primary" style="width:100%;" onclick="reviewUnitCards('unit3')">👉 複習本單元題卡（Q6、Q9）</button>
+              </div>
+            </div>
+          ` : quiz !== null ? `
+            <div class="feedback-box feedback-warn">
+              <b>注意兩個雷點：</b>沒刪掉 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> 標記會讓網頁破版，而且沒 <code>git add</code> 前 Git 不會允許你完成合併提交。再選一次！
+            </div>
+          ` : "";
+
+          body.innerHTML = `
+            <div class="step-label">步驟 5 / 5・單元驗收</div>
+            <div class="step-op">打開衝突的 <code>index.html</code> 看到以下內容，正確的解決順序是什麼？</div>
+            <pre class="code-block">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+0 / 54 題（0%）
+=======
+0 / 56 題（0%）
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feat/update-count</pre>
+            <div class="choice-list">
+              <button class="choice-btn ${quiz === 0 ? "wrong" : ""}" onclick="pickUnitQuiz(0)">A. 保留標記符號，直接 git commit -m "fix" 完成合併</button>
+              <button class="choice-btn ${quiz === 1 ? "correct" : ""}" onclick="pickUnitQuiz(1)">B. 整理成正確內容並刪光三段衝突標記 → git add index.html → git commit</button>
+              <button class="choice-btn ${quiz === 2 ? "wrong" : ""}" onclick="pickUnitQuiz(2)">C. 直接把 index.html 整檔刪除再 git push</button>
+            </div>
+            ${quizFeedback}
+          `;
+        }
+      } else {
+        if (step === 0) {
+          body.innerHTML = `
+            <div class="step-label">步驟 1 / 5・改到一半要切分支：git stash</div>
+            <div class="step-op">功能寫到一半還不想 commit，先用 <code>git stash</code> 收進抽屜</div>
+            <pre class="code-block">Saved working directory and index state On feat/u4: WIP: unit4</pre>
+            <div class="step-explain">工作目錄瞬間恢復乾淨，就能安心切去修急件；修完切回原分支再 <code>git stash pop</code> 取回進度。</div>
+            <details class="cmd-details">
+              <summary>展開完整指令</summary>
+              <pre class="code-block">git stash push -m "WIP: unit4"
+git switch main   # 去修急件
+git switch feat/u4 && git stash pop</pre>
+            </details>
+          `;
+        } else if (step === 1) {
+          body.innerHTML = `
+            <div class="step-label">步驟 2 / 5・已 commit 但「還沒 push」：git reset --soft</div>
+            <div class="step-op">剛在本機 commit 錯檔案，用 <code>git reset --soft HEAD~1</code> 退回提交</div>
+            <pre class="code-block">M  index.html
+M  git_mobile_study.html</pre>
+            <div class="step-explain"><code>--soft</code> 只撤銷那筆本機 commit，你的程式碼改動全都完好留在暫存區，可以重新挑選再提交。</div>
+            <details class="cmd-details">
+              <summary>展開完整指令</summary>
+              <pre class="code-block">git reset --soft HEAD~1   # 僅限尚未 push 的本機提交
+git status --short        # 改動仍完整留在暫存區</pre>
+            </details>
+          `;
+        } else if (step === 2) {
+          body.innerHTML = `
+            <div class="step-label">步驟 3 / 5・已經 push 上遠端：git revert</div>
+            <div class="step-op">已推送到遠端 <code>main</code> 才發現改壞，用 <code>git revert &lt;hash&gt;</code> 安全抵銷</div>
+            <pre class="code-block">[main 7e3a110] Revert "feat: broken title"
+ 1 file changed, 1 insertion(+), 1 deletion(-)</pre>
+            <div class="step-explain"><code>revert</code> 會新增一筆「反向提交」抵銷錯誤，完全不改寫既有歷史，是已 push 後的唯一安全做法。</div>
+            <details class="cmd-details">
+              <summary>展開完整指令</summary>
+              <pre class="code-block">git revert a1b2c3d
+git push origin main</pre>
+            </details>
+          `;
+        } else if (step === 3) {
+          const predHtml = pred !== null ? `
+            <div class="feedback-box ${pred === 0 ? "feedback-ok" : "feedback-warn"}">
+              <b>${pred === 0 ? "✓ 沒錯，救得回來！" : "↻ 別慌！只要曾 commit 過就還有救！"}</b>
+              <code>git reflog</code> 會在本機記錄 HEAD 每次移動的 Hash；找到誤刪前的 Hash 後，直接開新分支 <code>git switch -c rescue &lt;hash&gt;</code> 就能救回。
+            </div>
+            <div class="diff-grid">
+              <div class="diff-panel">
+                <div class="diff-panel-title">git log（看不見被 reset 的提交）</div>
+                <pre class="code-block" style="margin-top:0;">只顯示目前分支往回的歷史</pre>
+              </div>
+              <div class="diff-panel">
+                <div class="diff-panel-title">git reflog（本機移動暗黑日誌）</div>
+                <pre class="code-block" style="margin-top:0;">HEAD@{1}: commit: feat: unit4\n用 Hash 直接開分支救回</pre>
+              </div>
+            </div>
+          ` : "";
+          body.innerHTML = `
+            <div class="step-label">步驟 4 / 5・常見卡點預測（誤刪 Commit 急救）</div>
+            <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>你在本機不小心執行了 <code>git reset --hard HEAD~2</code>，剛剛做完的兩筆 commit 從 <code>git log</code> 消失了。</div>
+            <div class="step-op">這兩筆已經 commit 過的紀錄還救得回來嗎？</div>
+            <div class="choice-list">
+              <button class="choice-btn ${pred === 0 ? "correct" : ""}" onclick="pickUnitPred(0)">A. 救得回來！用 git reflog 查出舊 Hash 再開分支救回</button>
+              <button class="choice-btn ${pred === 1 ? "wrong" : ""}" onclick="pickUnitPred(1)">B. 徹底沒救了，只要 git log 看不到就永久消失</button>
+            </div>
+            ${predHtml}
+          `;
+        } else {
+          const showPassed = quiz === 0 || (quiz === null && unitMap.unit4);
+          const quizFeedback = showPassed ? `
+            <div class="feedback-box feedback-ok">
+              <b>✓ ${quiz === 0 ? "答對了！已完成單元 4（Git 四大單元全破！）" : "已完成單元 4（可重新作答或直接複習題卡）"}</b><br />
+              看到 <code>up to date with 'origin/main'</code> 代表這筆錯誤提交已經推上遠端主幹，必須用 <code>git revert</code> 新增反向提交，不可用 <code>reset --hard</code> 改寫主幹歷史。
+              <div style="margin-top:10px;">
+                <button class="btn btn-primary" style="width:100%;" onclick="reviewUnitCards('unit4')">👉 複習本單元題卡（Q7、Q8、Q10）</button>
+              </div>
+            </div>
+          ` : quiz !== null ? `
+            <div class="feedback-box feedback-warn">
+              <b>看輸出證據：</b><code>up to date with 'origin/main'</code> 表示錯誤提交已經推上遠端共用主幹。哪個指令能「不改寫歷史」安全撤銷？
+            </div>
+          ` : "";
+
+          body.innerHTML = `
+            <div class="step-label">步驟 5 / 5・單元驗收</div>
+            <div class="step-op">剛發現上一筆提交改壞了首頁，執行 <code>git status</code> 看到以下輸出，該用哪個指令安全撤銷？</div>
+            <pre class="code-block">On branch main
+Your branch is up to date with 'origin/main'.</pre>
+            <div class="choice-list">
+              <button class="choice-btn ${quiz === 0 ? "correct" : ""}" onclick="pickUnitQuiz(0)">A. git revert HEAD（新增一筆反向提交並推送，不改寫遠端歷史）</button>
+              <button class="choice-btn ${quiz === 1 ? "wrong" : ""}" onclick="pickUnitQuiz(1)">B. git reset --hard HEAD~1 再強制 git push --force 蓋掉 main</button>
+              <button class="choice-btn ${quiz === 2 ? "wrong" : ""}" onclick="pickUnitQuiz(2)">C. git stash 把已經 commit 的紀錄收進抽屜</button>
+            </div>
+            ${quizFeedback}
+          `;
+        }
       }
 
       const prevBtn = document.getElementById("btn-step-prev");
@@ -1313,17 +1534,29 @@ Your branch is behind 'origin/main' by 2 commits.</pre>
       nextBtn.textContent = "下一步 →";
       nextBtn.onclick = nextUnitStep;
 
-      document.getElementById("unit-deliverable").innerHTML = isU1
-        ? `<summary>📝 階段實作核對（可交出的終端機證據）</summary>
+      const deliverables = {
+        unit1: `<summary>📝 階段實作核對（可交出的終端機證據）</summary>
            <div style="margin-top:8px;line-height:1.55;">
              • 同時修改兩個檔案，只暫存並提交其中一個。<br />
              • 交出提交前的 <code>git diff --staged</code> 與提交後的 <code>git status --short</code>（證明另一個檔案仍留在工作目錄）。
-           </div>`
-        : `<summary>📝 階段實作核對（可交出的終端機證據）</summary>
+           </div>`,
+        unit2: `<summary>📝 階段實作核對（可交出的終端機證據）</summary>
            <div style="margin-top:8px;line-height:1.55;">
              • 開分支前先同步主幹，交出 <code>git status -sb</code>（確認 <code>## main...origin/main</code> 已對齊、沒有 <code>behind</code>）。<br />
              • 開立新分支完成小修改並推送，交出 <code>git branch --show-current</code>、<code>git push -u origin ...</code> 輸出與 GitHub PR 連結。
-           </div>`;
+           </div>`,
+        unit3: `<summary>📝 階段實作核對（可在臨時 Git 倉庫演練交件）</summary>
+           <div style="margin-top:8px;line-height:1.55;">
+             • 在臨時倉庫用兩條分支改同一行製造衝突，解決後確認檔案不含 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> 標記。<br />
+             • 交出衝突時的 <code>git status --short</code>（<code>UU</code>）與解決後的 <code>git log --graph --oneline -3</code>。
+           </div>`,
+        unit4: `<summary>📝 階段實作核對（可在臨時 Git 倉庫演練交件）</summary>
+           <div style="margin-top:8px;line-height:1.55;">
+             • 在臨時倉庫依序演練 <code>git stash</code> / <code>pop</code>、<code>git reset --soft HEAD~1</code>、<code>git revert HEAD</code> 與 <code>git reflog</code>。<br />
+             • 交出 <code>git log --oneline -4</code>（含 Revert 提交）與 <code>git reflog -n 5</code> 輸出。
+           </div>`
+      };
+      document.getElementById("unit-deliverable").innerHTML = deliverables[activeUnit];
 
       document.getElementById("unit-roadmap").innerHTML = UNIT_ROADMAP.map(u => {
         const done = !!unitMap[u.id];
@@ -1518,9 +1751,9 @@ Your branch is behind 'origin/main' by 2 commits.</pre>
       showAns = false;
       showHint = false;
       currentIdx = 0;
-      unitStepMap = { unit1: 0, unit2: 0 };
-      unitPredMap = { unit1: null, unit2: null };
-      unitQuizMap = { unit1: null, unit2: null };
+      unitStepMap = { unit1: 0, unit2: 0, unit3: 0, unit4: 0 };
+      unitPredMap = { unit1: null, unit2: null, unit3: null, unit4: null };
+      unitQuizMap = { unit1: null, unit2: null, unit3: null, unit4: null };
       try {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(UNIT_STORAGE_KEY);
