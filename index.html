@@ -352,7 +352,7 @@
     <div class="summary-card">
       <div class="summary-top">
         <span class="summary-label">🎯 整體熟練度</span>
-        <span id="total-progress" class="summary-num">0 / 64 題（0%）</span>
+        <span id="total-progress" class="summary-num">0 / 72 題（0%）</span>
       </div>
       <div class="progress-track">
         <div id="total-bar" class="progress-fill"></div>
@@ -386,13 +386,13 @@
           </div>
           <div class="stage-sub">前後端資安 + API 防打爆／金鑰管控 + Docker 與日誌排查（皆已上線）。</div>
         </button>
-        <div class="stage-row stage-disabled">
+        <button type="button" class="stage-row stage-clickable" onclick="jumpToStage(4)">
           <div class="stage-head">
             <span class="stage-title">階段 4・看得懂系統邊界</span>
-            <span class="pill" style="font-size:11px;">規劃中</span>
+            <span class="stage-action">前往 ↓</span>
           </div>
           <div class="stage-sub">模組化與微服務：比較單體與拆成「讀題庫／存進度」兩服務的故障影響與代價。</div>
-        </div>
+        </button>
         <button type="button" class="stage-row stage-clickable" onclick="jumpToStage(5)">
           <div class="stage-head">
             <span class="stage-title">階段 5・用得好 AI 工具</span>
@@ -485,6 +485,18 @@
         unitTotal: 1,
         total: 8,
         accent: "#4f46e5"
+      },
+      {
+        stageNum: 4,
+        stage: "階段 4",
+        title: "🏗️ 服務邊界與微服務",
+        desc: "模組化單體 vs 微服務權衡、Database per Service、故障隔離／逾時降級與分散式追蹤",
+        href: "microservices_mobile_study.html",
+        storageKey: "agy_ms_flashcards_v1",
+        unitStorageKey: "agy_ms_units_v1",
+        unitTotal: 1,
+        total: 8,
+        accent: "#b45309"
       },
       {
         stageNum: 5,

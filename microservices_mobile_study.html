@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>服務邊界與微服務 — 手機隨身學習冊</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #b45309;
+      --primary-fg: #ffffff;
+      --primary-soft: #fef3c7;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #d97706;
+      --warning-soft: #fef3c7;
+      --code-bg: #1e293b;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-alt: #334155;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #fbbf24;
+        --primary-fg: #0f172a;
+        --primary-soft: rgba(251, 191, 36, 0.2);
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.2);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.2);
+        --code-bg: #020617;
+        --code-fg: #e2e8f0;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #fbbf24;
+      --primary-fg: #0f172a;
+      --primary-soft: rgba(251, 191, 36, 0.2);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.2);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.2);
+      --code-bg: #020617;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 84px) 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .container { max-width: 600px; margin: 0 auto; }
+
+    .header {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 12px 0 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .back-btn {
+      text-decoration: none; background: var(--card); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 5px 9px; font-size: 13px; font-weight: 600; white-space: nowrap;
+    }
+    .title { font-size: 17px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .badge-progress {
+      font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+      background: var(--primary-soft); color: var(--primary); white-space: nowrap;
+    }
+    .icon-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      border-radius: 8px; padding: 6px 9px; font-size: 13px; cursor: pointer;
+    }
+
+    .tabs {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+      background: var(--card-alt); padding: 4px; border-radius: 12px; margin-bottom: 12px;
+    }
+    .tab-btn {
+      border: none; background: transparent; color: var(--muted);
+      font-size: 13px; font-weight: 600; padding: 9px 2px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+    }
+    .tab-btn.active { background: var(--card); color: var(--primary); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); }
+
+    .cat-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; scrollbar-width: none; }
+    .cat-bar::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      white-space: nowrap; border: 1px solid var(--border); background: var(--card); color: var(--muted);
+      padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .cat-pill.active { border-color: var(--primary); background: var(--primary); color: var(--primary-fg); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px; box-shadow: var(--shadow); margin-bottom: 14px;
+    }
+    .card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+    .meta-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .q-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 700;
+      background: var(--primary-soft); color: var(--primary); padding: 3px 9px; border-radius: 6px;
+    }
+    .q-cat { font-size: 12px; color: var(--muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; }
+    .status-tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+    .status-mastered { background: var(--success-soft); color: var(--success); }
+    .status-review { background: var(--warning-soft); color: var(--warning); }
+
+    .question-text { font-size: 18px; font-weight: 700; line-height: 1.45; margin-bottom: 14px; }
+    .hint-box {
+      background: var(--card-alt); border-left: 3px solid var(--primary); padding: 10px 12px;
+      border-radius: 8px; font-size: 14px; color: var(--muted); margin-bottom: 14px;
+    }
+    .unit-goal {
+      background: var(--card-alt); border-left: 3px solid var(--primary);
+      padding: 10px 12px; border-radius: 8px; font-size: 14px; margin: 10px 0 0 0;
+    }
+    .reveal-box {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 26px 16px;
+      text-align: center; cursor: pointer; background: var(--card-alt);
+    }
+    .reveal-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+    .reveal-sub { font-size: 13px; color: var(--muted); }
+    .answer-box { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px; }
+    .answer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; font-size: 14px; font-weight: 700; color: var(--primary);
+    }
+    .answer-point { margin-bottom: 10px; font-size: 15px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; background: var(--card-alt); padding: 2px 5px; border-radius: 4px; }
+    pre.code-block {
+      background: var(--code-bg); color: var(--code-fg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px; line-height: 1.45; padding: 12px; border-radius: 10px; overflow-x: auto; margin: 10px 0 0 0;
+    }
+
+    .step-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+    .step-pill {
+      border: 1px solid var(--border); background: var(--card-alt); color: var(--muted);
+      font-size: 12px; font-weight: 700; padding: 6px 2px; border-radius: 8px; cursor: pointer; text-align: center;
+    }
+    .step-pill.active { background: var(--primary); border-color: var(--primary); color: var(--primary-fg); }
+    .step-pill.done { background: var(--success-soft); border-color: transparent; color: var(--success); }
+    .step-label { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .step-op { font-size: 17px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; }
+    .step-explain { margin-top: 12px; font-size: 15px; line-height: 1.55; }
+    .cmd-details {
+      margin-top: 12px; background: var(--card-alt); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 12px; font-size: 13px;
+    }
+    .cmd-details summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    .choice-list { display: grid; gap: 8px; margin-top: 12px; }
+    .choice-btn {
+      width: 100%; text-align: left; border: 1px solid var(--border); background: var(--card-alt); color: var(--text);
+      font-size: 14px; font-weight: 600; padding: 12px 14px; border-radius: 12px; cursor: pointer; line-height: 1.45;
+    }
+    .choice-btn.correct { background: var(--success-soft); border-color: var(--success); }
+    .choice-btn.wrong { background: var(--warning-soft); border-color: var(--warning); }
+    .diff-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    @media (min-width: 460px) { .diff-grid { grid-template-columns: 1fr 1fr; } }
+    .diff-panel { background: var(--card-alt); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .diff-panel-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .feedback-box { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+    .feedback-ok { background: var(--success-soft); border: 1px solid var(--success); }
+    .feedback-warn { background: var(--warning-soft); border: 1px solid var(--warning); }
+    .step-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .grade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn {
+      border: 1px solid var(--border); background: var(--card); color: var(--text);
+      font-size: 15px; font-weight: 600; padding: 12px 10px; border-radius: 12px; cursor: pointer; text-align: center;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+    .btn-success { background: var(--success-soft); color: var(--success); border-color: transparent; }
+    .btn-warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
+
+    .list-item {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+    }
+    .list-q-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .list-q-title { font-size: 16px; font-weight: 700; margin-top: 6px; }
+    .hidden { display: none !important; }
+    .swipe-tip { text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← 目錄</a>
+        <h1 class="title">🏗️ 服務邊界與微服務</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-badge" class="badge-progress">已記住 0 / 8</span>
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
+        <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-unit" class="tab-btn active" onclick="switchMode('unit')">📖 單元教學</button>
+      <button id="tab-flashcard" class="tab-btn" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
+      <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 邊界總覽</button>
+    </div>
+
+    <div id="cat-bar" class="cat-bar hidden">
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (8)</button>
+      <button id="cat-bound" class="cat-pill" onclick="setCategory('bound')">單體與邊界 (3)</button>
+      <button id="cat-resil" class="cat-pill" onclick="setCategory('resil')">隔離與通訊 (3)</button>
+      <button id="cat-obs" class="cat-pill" onclick="setCategory('obs')">維運與追蹤 (2)</button>
+      <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
+    </div>
+
+    <!-- VIEW 0: Stage 4 Microservices Unit 1 -->
+    <div id="view-unit">
+      <div class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span class="q-num">階段 4・微服務單元 1</span>
+            <span class="q-cat">架構權衡・5～8 分鐘</span>
+            <span id="ms-u1-status" class="status-tag hidden"></span>
+          </div>
+          <span id="ms-unit-badge" class="q-cat">學完 0 / 1 單元</span>
+        </div>
+        <div class="question-text" style="margin-bottom:6px;">「讀題庫」和「存進度」該不該拆成兩個服務？</div>
+        <div class="unit-goal">
+          <b>學完要會做什麼：</b>能比較單體與拆服務後的故障隔離效果，講得出拆分的收益與代價，並設計不互相拖死的呼叫邊界。
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="ms-step-pills" class="step-pills"></div>
+        <div id="ms-body"></div>
+        <div class="step-nav">
+          <button id="btn-ms-prev" class="btn" onclick="prevMsStep()">← 上一步</button>
+          <button id="btn-ms-next" class="btn btn-primary" onclick="nextMsStep()">下一步 →</button>
+        </div>
+        <details class="cmd-details" style="margin-top:12px;">
+          <summary>📝 階段實作核對（架構權衡備忘錄交件）</summary>
+          <div style="margin-top:8px;line-height:1.55;">
+            • 以 <code>AI-Study-Cards</code> 為例，用 3 句話寫出：目前單人維護為何先維持模組化單體／靜態站？若未來「存進度」變高寫入瓶頸，拆開後要加上哪兩個防護（逾時＋降級）才不會拖垮「讀題庫」？
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- VIEW 1: Flashcards -->
+    <div id="view-flashcard" class="hidden">
+      <div id="touch-card" class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span id="c-index" class="q-num">Q1 (1/8)</span>
+            <span id="c-cat" class="q-cat">單體與邊界</span>
+            <span id="c-status" class="status-tag hidden"></span>
+          </div>
+          <button id="btn-hint" class="icon-btn" onclick="toggleHint()">💡 提示</button>
+        </div>
+        <div id="c-question" class="question-text"></div>
+        <div id="c-hint" class="hint-box hidden"></div>
+        <div id="c-reveal" class="reveal-box" onclick="toggleAnswer()">
+          <div class="reveal-title">🔒 答案已隱藏（先在腦中回想）</div>
+          <div class="reveal-sub">點一下這裡打開答案</div>
+        </div>
+        <div id="c-answer" class="answer-box hidden">
+          <div class="answer-header">
+            <span>✓ 標準解析與記憶重點</span>
+            <span onclick="toggleAnswer()" style="color:var(--muted);font-weight:500;text-decoration:underline;cursor:pointer;">收起答案</span>
+          </div>
+          <div id="c-answer-points"></div>
+          <pre id="c-code" class="code-block hidden"></pre>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="btn" onclick="prevCard()">← 上一題</button>
+        <button id="btn-main-toggle" class="btn btn-primary" onclick="toggleAnswer()">👁 打開答案</button>
+        <button class="btn" onclick="nextCard()">下一題 →</button>
+      </div>
+      <div class="grade-grid">
+        <button class="btn btn-warning" onclick="markStatus('review')">↻ 待複習</button>
+        <button class="btn btn-success" onclick="markStatus('mastered')">✓ 已記住（下一題）</button>
+      </div>
+      <div class="swipe-tip">💡 支援手機左右滑動換題・進度自動儲存於瀏覽器</div>
+    </div>
+
+    <!-- VIEW 2: List -->
+    <div id="view-list" class="hidden">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+        <button class="icon-btn" onclick="toggleAllList(false)">🙈 全部隱藏</button>
+        <button class="icon-btn" onclick="toggleAllList(true)">👁 全部打開</button>
+      </div>
+      <div id="list-container"></div>
+    </div>
+
+    <!-- VIEW 3: Architecture Boundary Summary -->
+    <div id="view-arch" class="hidden">
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">1. 故障隔離架構圖（拆開後的價值）</div>
+        <pre class="code-block">[前端 / API Gateway]
+   ├── GET  /cards    ──▶ [題庫服務 (快取)] ──▶ 200 OK（核心正常）
+   └── POST /progress ──▶ [進度服務 (寫 DB)] ──▶ 503（逾時 2s 快速降級）</pre>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">2. 拆成微服務前必問 3 題</div>
+        <div class="answer-point">• <b>1. 擴展需求不同嗎？</b>（例如讀題庫多、存進度寫入高，或 AI 推論需要獨立 GPU）。</div>
+        <div class="answer-point">• <b>2. 團隊夠大嗎？</b>（單人或小團隊先做「模組化單體」，省去跨網路與分散式除錯成本）。</div>
+        <div class="answer-point">• <b>3. 故障隔離做得到嗎？</b>（若 A 掛了 B 還是跟著死，那只是把單體拆成了「分散式單體」）。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CARDS = [
+      {
+        id: 1,
+        cat: "bound",
+        catName: "單體與邊界",
+        q: "單體架構（Monolith）、模組化單體（Modular Monolith）與微服務（Microservices）的核心差別是什麼？",
+        hint: "差別在「程式碼邊界」與「是否拆成獨立部署的程序」。",
+        ans: [
+          "• <b>單體（Monolith）</b>：所有功能打包成同一個程序部署，開發除錯最簡單，但沒規劃邊界時容易變成義大利麵程式碼。",
+          "• <b>模組化單體</b>：仍是單一部署，但內部嚴格切分模組邊界（如 <code>cards/</code> 與 <code>progress/</code> 不互撈對方資料表），<b>是小團隊最佳起點</b>。",
+          "• <b>微服務</b>：每個服務獨立部署、獨立擴展、各自擁有資料庫，換取故障隔離與團隊自治，但付出網路延遲與維運複雜度代價。"
+        ],
+        code: "演進順序：模組化單體（先切好邊界） --[真的遇到瓶頸]--> 拆出獨立微服務"
+      },
+      {
+        id: 2,
+        cat: "bound",
+        catName: "單體與邊界",
+        q: "微服務為什麼強調「Database per Service（每個服務各自管自己的資料庫）」，而不是共用同一張資料表？",
+        hint: "如果兩個服務直接連同一張表，改一個欄位會發生什麼事？",
+        ans: [
+          "• <b>避免隱性耦合</b>：若兩服務共用同一張表，A 服務改個欄位名稱或加鎖查詢，B 服務就會無預警崩潰或被拖慢，失去獨立部署的意義。",
+          "• <b>正確做法</b>：資料只能透過所屬服務的 API 或事件（Event）存取，各自獨立演進 Schema。"
+        ],
+        code: "✓ cards-svc -> cards_db | progress-svc -> progress_db\n✗ 兩個服務直接 JOIN 同一個 shared_db"
+      },
+      {
+        id: 3,
+        cat: "bound",
+        catName: "單體與邊界",
+        q: "為什麼小團隊或專案初期通常「不建議」一開始就拆成很多微服務？會付出哪些代價？",
+        hint: "原本一個函式呼叫 0.01ms，跨網路變成 HTTP 請求後會多出哪些麻煩？",
+        ans: [
+          "• <b>五大隱藏代價</b>：1. 跨服務網路延遲與部分失敗；2. 分散式交易難以維持強一致；3. 多個 Repo／容器的部署與版本協調成本；4. 跨服務除錯需要分散式追蹤；5. 邊界還沒摸清就拆，之後重構代價極高。"
+        ],
+        code: "原則：先用模組化單體跑穩需求，有明確擴展或隔離痛點再拆"
+      },
+      {
+        id: 4,
+        cat: "resil",
+        catName: "隔離與通訊",
+        q: "微服務之間「同步呼叫（HTTP / gRPC）」與「非同步佇列（Message Queue）」各自適合什麼場景？",
+        hint: "一個要立刻拿到答案才能畫畫面，另一個可以先收單慢慢處理。",
+        ans: [
+          "• <b>同步呼叫（HTTP / gRPC）</b>：呼叫方需要立刻得到結果（例如前端讀題庫清單），但下游慢時會直接拖慢上游，必設逾時。",
+          "• <b>非同步佇列（如 RabbitMQ / SQS / Kafka）</b>：不需要立刻回傳結果的動作（例如記錄學習分析事件、寄通知信），能削峰填谷並解耦兩邊的可用性。"
+        ],
+        code: "讀題庫 -> 同步 HTTP (要立刻顯示)\n寫學習統計 / 寄信 -> 非同步 Queue (解耦不卡主流程)"
+      },
+      {
+        id: 5,
+        cat: "resil",
+        catName: "隔離與通訊",
+        q: "什麼是「雪崩效應（Cascading Failure）」？Timeout 與熔斷器（Circuit Breaker）怎麼阻止它？",
+        hint: "進度服務卡死 30 秒，如果上游一直等它，上游的連線池會怎樣？",
+        ans: [
+          "• <b>雪崩效應</b>：下游服務變慢不回應，上游沒設短逾時，導致上游所有執行緒都卡在等待，最後連原本正常的服務一起癱瘓。",
+          "• <b>防護組合</b>：1. <b>短 Timeout</b>（如 2 秒不等死）；2. <b>熔斷器（Circuit Breaker）</b>：連續失敗達門檻就直接短路回降級結果，讓下游喘息恢復，過一段時間再半開試探。"
+        ],
+        code: "下游掛掉 -> 連續失敗 -> 熔斷開啟 (快速回降級，不浪費執行緒等待)"
+      },
+      {
+        id: 6,
+        cat: "resil",
+        catName: "隔離與通訊",
+        q: "微服務架構中，API Gateway（閘道層）通常負責哪些統一工作？",
+        hint: "不要讓 10 個微服務各自重複寫一次驗證、限流與路由。",
+        ans: [
+          "• <b>單一對外入口</b>：依路徑轉發（<code>/cards</code> → 題庫服務、<code>/progress</code> → 進度服務）。",
+          "• <b>集中處理橫切關注點</b>：TLS 終止、統一身分驗證、分級限流（429）、CORS 與 Request ID 注入，讓內部微服務專注業務邏輯。"
+        ],
+        code: "Client -> [API Gateway: Auth / RateLimit / Routing] -> 內部微服務"
+      },
+      {
+        id: 7,
+        cat: "obs",
+        catName: "維運與追蹤",
+        q: "一個請求經過 Gateway → 下游服務才報錯，要怎麼把散落在不同日誌的紀錄串起來？",
+        hint: "應用層常用 X-Request-Id 串日誌，跨服務追蹤標準則有 W3C traceparent 的 Trace ID。",
+        ans: [
+          "• <b>應用層 <code>X-Request-Id</code></b>：在 Gateway 為這筆請求產生唯一編號並透過 Header 傳給下游，兩邊寫日誌都印出同一個 <code>request_id</code> 即可串起同一筆請求。",
+          "• <b>標準分散式追蹤（W3C Trace Context）</b>：搭配 OpenTelemetry 傳遞標準 <b><code>traceparent</code></b> 標頭（內含 <b>Trace ID</b> 與 Span ID），不只串日誌，還能畫出跨服務每段耗時。"
+        ],
+        code: "[Gateway]      request_id=req-9a8b7c POST /api/progress -> 503 (2004ms, gateway fallback)\n[progress-svc] request_id=req-9a8b7c POST /api/progress -> DB pool busy (503)"
+      },
+      {
+        id: 8,
+        cat: "obs",
+        catName: "維運與追蹤",
+        q: "拆成多個服務後常聽到「最終一致性（Eventual Consistency）」，它保證什麼、又不保證什麼？",
+        hint: "最終一致性談的是「停止新更新後會收斂」，固定幾秒內追上則是額外訂的延遲目標。",
+        ans: [
+          "• <b>核心定義</b>：不要求多個服務在同一毫秒透過分散式鎖同時寫完；它保證的是「<b>停止新更新後，所有讀取結果最終會收斂為一致</b>」。",
+          "• <b>與延遲目標的差別</b>：最終一致性本身不保證固定時間；實務上常見「例如幾百毫秒或 1～2 秒內更新統計」，那是該系統另外訂的延遲目標（SLO）。"
+        ],
+        code: "存進度成功 -> 發事件 progress.updated -> 統計服務非同步追上（停止新更新後最終一致）"
+      }
+    ];
+
+    const STORAGE_KEY = "agy_ms_flashcards_v1";
+    const UNIT_STORAGE_KEY = "agy_ms_units_v1";
+    const THEME_KEY = "agy_study_theme_v1";
+
+    let statusMap = {};
+    let unitMap = {};
+    let listOpenMap = {};
+    let currentMode = "unit";
+    let currentCat = "all";
+    let currentIdx = 0;
+    let showAns = false;
+    let showHint = false;
+    let msStep = 0;
+    let msPred = null;
+    let msQuiz = null;
+
+    function readJsonMap(key) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      statusMap = readJsonMap(STORAGE_KEY);
+      unitMap = readJsonMap(UNIT_STORAGE_KEY);
+    } catch (_) {}
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function saveCardStatus(cardId, state) {
+      const latest = readJsonMap(STORAGE_KEY);
+      latest[cardId] = state;
+      statusMap = latest;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap)); } catch (_) {}
+    }
+
+    function saveUnitDone(unitId) {
+      const latest = readJsonMap(UNIT_STORAGE_KEY);
+      latest[unitId] = true;
+      unitMap = latest;
+      try { localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap)); } catch (_) {}
+    }
+
+    function getFiltered() {
+      if (currentCat === "all") return CARDS;
+      if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
+      return CARDS.filter(c => c.cat === currentCat);
+    }
+
+    function updateBadges() {
+      const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
+      const review = Object.values(statusMap).filter(v => v === "review").length;
+      const unitsDone = Object.values(unitMap).filter(Boolean).length;
+      document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
+      document.getElementById("cat-review").textContent = `待複習 (${review})`;
+      document.getElementById("ms-unit-badge").textContent = `學完 ${unitsDone} / 1 單元`;
+      const st = document.getElementById("ms-u1-status");
+      if (unitMap.unit1) {
+        st.textContent = "✓ 已完成";
+        st.className = "status-tag status-mastered";
+      } else {
+        st.className = "status-tag hidden";
+      }
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      ["unit", "flashcard", "list", "arch"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
+      });
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch" || mode === "unit");
+      if (mode === "unit") renderMsUnit();
+      if (mode === "flashcard") renderCard();
+      if (mode === "list") renderList();
+    }
+
+    function setCategory(cat) {
+      currentCat = cat;
+      currentIdx = 0;
+      showAns = false;
+      showHint = false;
+      ["all", "bound", "resil", "obs", "review"].forEach(c => {
+        document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
+      });
+      if (currentMode === "flashcard") renderCard();
+      if (currentMode === "list") renderList();
+    }
+
+    function reviewMsCards() {
+      switchMode("flashcard");
+      setCategory("all");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setMsStep(idx) { msStep = Math.max(0, Math.min(4, idx)); renderMsUnit(); }
+    function prevMsStep() { if (msStep > 0) setMsStep(msStep - 1); }
+    function nextMsStep() { if (msStep < 4) setMsStep(msStep + 1); }
+    function pickMsPred(c) { msPred = c; renderMsUnit(); }
+    function pickMsQuiz(c) {
+      msQuiz = c;
+      if (c === 0) { saveUnitDone("unit1"); }
+      renderMsUnit();
+    }
+
+    function renderMsUnit() {
+      updateBadges();
+      const labels = ["1. 看單體", "2. 拆邊界", "3. 故障隔離", "4. 卡點預測", "5. 驗收題"];
+      document.getElementById("ms-step-pills").innerHTML = labels.map((lb, i) => {
+        const cls = i === msStep ? "step-pill active" : (i === 4 && unitMap.unit1) ? "step-pill done" : "step-pill";
+        return `<button class="${cls}" onclick="setMsStep(${i})">${lb}</button>`;
+      }).join("");
+
+      const body = document.getElementById("ms-body");
+      if (msStep === 0) {
+        body.innerHTML = `
+          <div class="step-label">步驟 1 / 5・先從模組化單體出發</div>
+          <div class="step-op">單一後端同時管理「讀題庫」與「存進度」，先把內部邊界切乾淨</div>
+          <pre class="code-block">[單一後端 study-api]
+  ├── modules/cards/      (讀題庫：讀多寫少)
+  └── modules/progress/   (存進度：高頻寫入)</pre>
+          <div class="step-explain">部署只要一個容器、沒有跨網路延遲；小團隊與初期階段，模組化單體永遠比急著拆微服務更穩更快。</div>
+        `;
+      } else if (msStep === 1) {
+        body.innerHTML = `
+          <div class="step-label">步驟 2 / 5・依負載與隔離需求拆出兩個服務</div>
+          <div class="step-op">把「題庫服務」與「進度服務」拆開部署，各自管自己的資料庫</div>
+          <pre class="code-block">[API Gateway]
+  ├── /api/cards    ──▶ [cards-svc + Cache]
+  └── /api/progress ──▶ [progress-svc + progress_db]</pre>
+          <div class="step-explain">兩邊獨立擴展、獨立重啟，且不共用同一張資料表（Database per Service），避免改一個 Schema 互相拖垮。</div>
+        `;
+      } else if (msStep === 2) {
+        body.innerHTML = `
+          <div class="step-label">步驟 3 / 5・比較故障影響（示意情境）</div>
+          <div class="step-op">當 <code>progress-svc</code> 寫入過載回 <code>503</code>（或閘道 2 秒逾時後轉為 <code>503</code> 降級），使用者還能讀題庫嗎？</div>
+          <pre class="code-block"># 【示意回應】
+GET  /api/cards    -> 200 OK（核心題庫照常顯示）
+POST /api/progress -> 503 Service Unavailable（進度服務過載或閘道逾時降級，提示稍後重試）</pre>
+          <div class="step-explain">這才是拆服務的真正收益：進度寫入故障時，核心閱讀體驗不受影響。</div>
+        `;
+      } else if (msStep === 3) {
+        const predHtml = msPred !== null ? `
+          <div class="feedback-box ${msPred === 0 ? "feedback-ok" : "feedback-warn"}">
+            <b>${msPred === 0 ? "✓ 判斷務實！" : "↻ 過早拆微服務是業界最常見的坑！"}</b>
+            1～2 人的小專案拆 6 個服務，光維護部署、跨服務除錯與網路逾時就會吃掉所有開發時間；先做<b>模組化單體</b>，真的遇到瓶頸再拆！
+          </div>
+          <div class="diff-grid">
+            <div class="diff-panel">
+              <div class="diff-panel-title">模組化單體（小團隊首選）</div>
+              <pre class="code-block" style="margin-top:0;">1 份部署、零跨網延遲\n改功能快、除錯直覺</pre>
+            </div>
+            <div class="diff-panel">
+              <div class="diff-panel-title">過早拆 6 個微服務</div>
+              <pre class="code-block" style="margin-top:0;">6 套部署與設定檔\n要追分散式日誌與部分失敗</pre>
+            </div>
+          </div>
+        ` : "";
+        body.innerHTML = `
+          <div class="step-label">步驟 4 / 5・常見卡點預測（拆分的代價）</div>
+          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>團隊只有 1～2 人、每天不到 500 位使用者，有人提議一開始就把學習卡拆成 6 個微服務。</div>
+          <div class="step-op">這時候應該怎麼評估？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${msPred === 0 ? "correct" : ""}" onclick="pickMsPred(0)">A. 先維持模組化單體；過早拆 6 個服務會大幅增加部署、網路與除錯代價</button>
+            <button class="choice-btn ${msPred === 1 ? "wrong" : ""}" onclick="pickMsPred(1)">B. 微服務永遠比單體好，就算只有 1 個人也應該越早拆越細</button>
+          </div>
+          ${predHtml}
+        `;
+      } else {
+        const showPassed = msQuiz === 0 || (msQuiz === null && unitMap.unit1);
+        const fb = showPassed ? `
+          <div class="feedback-box feedback-ok">
+            <b>✓ ${msQuiz === 0 ? "答對了！已完成階段 4 微服務單元" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
+            如果切下一題時前端死等 <code>POST /api/progress</code> 寫入逾時 30 秒才顯示題庫，拆服務就失去了故障隔離的意義！把 <code>GET /api/cards</code> 與 <code>POST /api/progress</code> 解耦，替進度寫入設 2 秒逾時（由閘道或前端轉成降級提示稍後重試），就能保住核心讀題庫體驗。
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary" style="width:100%;" onclick="reviewMsCards()">👉 複習服務邊界與微服務題卡（8 題）</button>
+            </div>
+          </div>
+        ` : msQuiz !== null ? `
+          <div class="feedback-box feedback-warn">
+            <b>想想看「故障隔離」的條件：</b>現在 <code>GET /api/cards</code> 明明是 <code>200 OK</code>，卻被卡住 30 秒的 <code>POST /api/progress</code> 寫入拖死。怎麼讓讀題庫不用苦等進度寫入？再選一次！
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          <div class="step-label">步驟 5 / 5・單元驗收</div>
+          <div class="step-op">拆成兩個服務後遇到以下狀態，卻因為頁面要等 <code>POST /api/progress</code> 寫入逾時 30 秒才顯示題庫，導致使用者覺得全站當機。怎麼改才真正發揮故障隔離？</div>
+          <pre class="code-block">GET  /api/cards    -> 200 OK (15ms)
+POST /api/progress -> 進度服務過載掛起 30s（最後閘道才回 503 降級）</pre>
+          <div class="choice-list">
+            <button class="choice-btn ${msQuiz === 0 ? "correct" : ""}" onclick="pickMsQuiz(0)">A. 讀題庫與寫進度解耦，替 POST /api/progress 設短逾時（如 2 秒）＋降級提示稍後重試，題庫先正常顯示</button>
+            <button class="choice-btn ${msQuiz === 1 ? "wrong" : ""}" onclick="pickMsQuiz(1)">B. 把 POST /api/progress 的逾時延長到 120 秒，讓使用者慢慢等它恢復</button>
+            <button class="choice-btn ${msQuiz === 2 ? "wrong" : ""}" onclick="pickMsQuiz(2)">C. 讓 cards-svc 收到請求時先等待 progress-svc 寫入成功，兩邊一起報 503</button>
+          </div>
+          ${fb}
+        `;
+      }
+
+      const prevBtn = document.getElementById("btn-ms-prev");
+      const nextBtn = document.getElementById("btn-ms-next");
+      prevBtn.disabled = msStep === 0;
+      prevBtn.style.opacity = msStep === 0 ? "0.45" : "1";
+      prevBtn.style.gridColumn = msStep === 4 ? "1 / -1" : "";
+      nextBtn.classList.toggle("hidden", msStep === 4);
+    }
+
+    function renderCard() {
+      const list = getFiltered();
+      updateBadges();
+      if (!list.length) {
+        document.getElementById("c-index").textContent = "0 / 0";
+        document.getElementById("c-cat").textContent = "無題目";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (8)」繼續練習。";
+        document.getElementById("c-hint").classList.add("hidden");
+        document.getElementById("c-reveal").classList.add("hidden");
+        document.getElementById("c-answer").classList.add("hidden");
+        document.getElementById("c-status").classList.add("hidden");
+        return;
+      }
+      if (currentIdx >= list.length) currentIdx = 0;
+      if (currentIdx < 0) currentIdx = list.length - 1;
+      const card = list[currentIdx];
+      document.getElementById("c-index").textContent = `Q${card.id} (${currentIdx + 1}/${list.length})`;
+      document.getElementById("c-cat").textContent = card.catName;
+      document.getElementById("c-question").textContent = card.q;
+      const stEl = document.getElementById("c-status");
+      const st = statusMap[card.id];
+      if (st === "mastered") { stEl.textContent = "✓ 已記住"; stEl.className = "status-tag status-mastered"; }
+      else if (st === "review") { stEl.textContent = "↻ 待複習"; stEl.className = "status-tag status-review"; }
+      else { stEl.className = "status-tag hidden"; }
+      const hintEl = document.getElementById("c-hint");
+      hintEl.textContent = `💡 提示：${card.hint}`;
+      hintEl.classList.toggle("hidden", !showHint);
+      document.getElementById("c-answer-points").innerHTML = card.ans.map(line => `<div class="answer-point">${line}</div>`).join("");
+      const codeEl = document.getElementById("c-code");
+      if (card.code) { codeEl.textContent = card.code; codeEl.classList.remove("hidden"); }
+      else { codeEl.classList.add("hidden"); }
+      document.getElementById("c-reveal").classList.toggle("hidden", showAns);
+      document.getElementById("c-answer").classList.toggle("hidden", !showAns);
+      document.getElementById("btn-main-toggle").textContent = showAns ? "🙈 隱藏答案" : "👁 打開答案";
+    }
+
+    function toggleAnswer() { if (!getFiltered().length) return; showAns = !showAns; renderCard(); }
+    function toggleHint() { if (!getFiltered().length) return; showHint = !showHint; renderCard(); }
+    function nextCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx + 1) % l.length; showAns = false; showHint = false; renderCard(); }
+    function prevCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx - 1 + l.length) % l.length; showAns = false; showHint = false; renderCard(); }
+    function markStatus(state) {
+      const l = getFiltered(); if (!l.length) return;
+      saveCardStatus(l[currentIdx].id, state); updateBadges();
+      if (state === "mastered") nextCard(); else renderCard();
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const box = document.getElementById("list-container");
+      updateBadges();
+      if (!list.length) { box.innerHTML = `<div class="card">目前此分類沒有題目。</div>`; return; }
+      box.innerHTML = list.map(card => {
+        const open = !!listOpenMap[card.id];
+        const st = statusMap[card.id];
+        const stBadge = st === "mastered" ? `<span class="status-tag status-mastered">✓ 已記住</span>`
+          : st === "review" ? `<span class="status-tag status-review">↻ 待複習</span>` : "";
+        return `
+          <div class="list-item">
+            <div class="list-q-row" onclick="toggleListOne(${card.id})">
+              <div>
+                <div class="meta-left">
+                  <span class="q-num">Q${card.id}</span>
+                  <span class="q-cat">${card.catName}</span>
+                  ${stBadge}
+                </div>
+                <div class="list-q-title">${escapeHtml(card.q)}</div>
+              </div>
+              <button class="icon-btn" style="flex-shrink:0;white-space:nowrap;">${open ? "🙈 收起" : "👁 答案"}</button>
+            </div>
+            ${open ? `
+              <div class="answer-box">
+                <div class="hint-box">💡 提示：${escapeHtml(card.hint)}</div>
+                ${card.ans.map(line => `<div class="answer-point">${line}</div>`).join("")}
+                ${card.code ? `<pre class="code-block">${escapeHtml(card.code)}</pre>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+    function toggleListOne(id) { listOpenMap[id] = !listOpenMap[id]; renderList(); }
+    function toggleAllList(openState) { CARDS.forEach(c => { listOpenMap[c.id] = openState; }); renderList(); }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const cur = root.getAttribute("data-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const next = (cur ? cur === "dark" : prefersDark) ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+    }
+
+    function resetAll() {
+      if (!confirm("確定要重置「服務邊界與微服務」的單元與題卡進度嗎？")) return;
+      statusMap = {}; unitMap = {}; listOpenMap = {};
+      showAns = false; showHint = false; currentIdx = 0; msStep = 0; msPred = null; msQuiz = null;
+      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UNIT_STORAGE_KEY); } catch (_) {}
+      setCategory("all");
+      if (currentMode === "unit") renderMsUnit();
+    }
+
+    let touchStartX = 0, touchStartY = 0;
+    const touchCard = document.getElementById("touch-card");
+    touchCard.addEventListener("touchstart", e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: true });
+    touchCard.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) nextCard(); else prevCard(); }
+    }, { passive: true });
+
+    renderMsUnit();
+    renderCard();
+  </script>
+</body>
+</html>
