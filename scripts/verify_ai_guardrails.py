@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Minimal red-team / blue-team deterministic guardrail verification script.
+"""Local guardrail function demo (topic allowlist, path format/workspace bounds, secret redaction).
+
+Note: This script demonstrates deterministic helper checks only; it does not
+execute live MCP tools or human approval gates.
 
 Run:
     python3 scripts/verify_ai_guardrails.py
@@ -11,6 +14,13 @@ import sys
 
 ALLOWED_TOPICS = {"git", "api", "react", "security", "mcp"}
 SECRET_PATTERN = re.compile(r"(sk-[A-Za-z0-9_-]{8,}|Bearer\s+[A-Za-z0-9._-]{8,})")
+
+
+def require(cond: bool, msg: str) -> None:
+    """Explicit check that remains active even under `python3 -O`."""
+    if not cond:
+        print(f"GUARDRAIL CHECK FAILED: {msg}", file=sys.stderr)
+        sys.exit(1)
 
 
 def validate_topic(raw) -> tuple[bool, str]:
@@ -53,27 +63,27 @@ def main() -> int:
     bad_topics = [["git"], {"topic": "git"}, "", "../.env", "git; rm -rf /", "a" * 51, None]
     for payload in bad_topics:
         ok, msg = validate_topic(payload)
-        assert not ok, f"Expected reject for {payload!r}, got {msg}"
+        require(not ok, f"Expected reject for {payload!r}, got {msg}")
 
     # Valid topic
     ok, msg = validate_topic("git")
-    assert ok, f"Expected allow for 'git', got {msg}"
+    require(ok, f"Expected allow for 'git', got {msg}")
 
     # 2. Red-team file paths (must be rejected)
     bad_paths = ["../.env", ".env", "/etc/passwd", "sub/../../secret.txt", ["index.html"], ""]
     for payload in bad_paths:
         ok, msg = validate_readonly_path(workspace, payload)
-        assert not ok, f"Expected reject for path {payload!r}, got {msg}"
+        require(not ok, f"Expected reject for path {payload!r}, got {msg}")
 
     # Valid workspace file
     ok, msg = validate_readonly_path(workspace, "index.html")
-    assert ok, f"Expected allow for 'index.html', got {msg}"
+    require(ok, f"Expected allow for 'index.html', got {msg}")
 
     # 3. Output redaction check
     leaked = "Debug token: sk-live-1234567890abcdef and Bearer eyJhbGciOiJIUzI1NiJ9"
     cleaned = redact_output(leaked)
-    assert "sk-live-" not in cleaned and "eyJhbGci" not in cleaned
-    assert cleaned.count("[REDACTED_SECRET]") == 2
+    require("sk-live-" not in cleaned and "eyJhbGci" not in cleaned, "Secret leaked in output")
+    require(cleaned.count("[REDACTED_SECRET]") == 2, f"Expected 2 redactions, got: {cleaned}")
 
     print("ALL AI GUARDRAIL CHECKS PASSED")
     return 0

@@ -535,10 +535,10 @@
           <button id="btn-mcp-next" class="btn btn-primary" onclick="nextMcpStep()">下一步 →</button>
         </div>
         <details class="cmd-details" style="margin-top:12px;">
-          <summary>📝 階段實作核對（本機可直接執行的紅藍隊腳本）</summary>
+          <summary>📝 階段實作核對（本機守衛函式示範腳本）</summary>
           <div style="margin-top:8px;line-height:1.55;">
-            • 在本專案目錄執行 <code>python3 scripts/verify_ai_guardrails.py</code>。<br />
-            • 確認腳本攔截陣列輸入、路徑穿越（<code>../.env</code>）、非白名單主題，並將模擬輸出中的密鑰脫敏，最後印出 <code>ALL AI GUARDRAIL CHECKS PASSED</code>。
+            • 在本專案目錄執行 <code>python3 scripts/verify_ai_guardrails.py</code>（即使加上 <code>-O</code> 也會完整執行檢查）。<br />
+            • 此腳本示範主題白名單、路徑格式與工作區邊界檢查，以及輸出密鑰脫敏（不含實際 MCP 工具執行或人工核准流程）。
           </div>
         </details>
       </div>
@@ -932,7 +932,7 @@ fetch(aiEndpoint, { signal: AbortSignal.timeout(8_000) });</pre>
         const fb = showPassed ? `
           <div class="feedback-box feedback-ok">
             <b>✓ ${mcpQuiz === 1 ? "答對了！已完成階段 5 AI 資安單元" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
-            把紅隊打穿的案例（陣列輸入、路徑穿越）補進確定性守衛並寫成自動化回歸測試（例如 <code>scripts/verify_ai_guardrails.py</code>），才能保證未來改版絕不復發。
+            把紅隊打穿的案例（陣列輸入、路徑穿越）補進確定性守衛，並用回歸測試持續檢查已知案例（可參考本機守衛函式示範 <code>scripts/verify_ai_guardrails.py</code>），才能有效降低改版時再度引入同類問題的風險。
             <div style="margin-top:10px;">
               <button class="btn btn-primary" style="width:100%;" onclick="reviewMcpCards()">👉 複習 MCP 與 AI 治理題卡（10 題）</button>
             </div>
