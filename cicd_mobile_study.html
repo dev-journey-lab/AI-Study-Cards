@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>單元測試與 CI／CD 管線 — 手機隨身學習冊</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #059669;
+      --primary-fg: #ffffff;
+      --primary-soft: #d1fae5;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #d97706;
+      --warning-soft: #fef3c7;
+      --code-bg: #1e293b;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-alt: #334155;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #34d399;
+        --primary-fg: #0f172a;
+        --primary-soft: rgba(52, 211, 153, 0.2);
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.2);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.2);
+        --code-bg: #020617;
+        --code-fg: #e2e8f0;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #34d399;
+      --primary-fg: #0f172a;
+      --primary-soft: rgba(52, 211, 153, 0.2);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.2);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.2);
+      --code-bg: #020617;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 84px) 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .container { max-width: 600px; margin: 0 auto; }
+
+    .header {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 12px 0 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .back-btn {
+      text-decoration: none; background: var(--card); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 5px 9px; font-size: 13px; font-weight: 600; white-space: nowrap;
+    }
+    .title { font-size: 17px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .badge-progress {
+      font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+      background: var(--primary-soft); color: var(--primary); white-space: nowrap;
+    }
+    .icon-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      border-radius: 8px; padding: 6px 9px; font-size: 13px; cursor: pointer;
+    }
+
+    .tabs {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+      background: var(--card-alt); padding: 4px; border-radius: 12px; margin-bottom: 12px;
+    }
+    .tab-btn {
+      border: none; background: transparent; color: var(--muted);
+      font-size: 13px; font-weight: 600; padding: 9px 2px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+    }
+    .tab-btn.active { background: var(--card); color: var(--primary); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); }
+
+    .cat-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; scrollbar-width: none; }
+    .cat-bar::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      white-space: nowrap; border: 1px solid var(--border); background: var(--card); color: var(--muted);
+      padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .cat-pill.active { border-color: var(--primary); background: var(--primary); color: var(--primary-fg); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px; box-shadow: var(--shadow); margin-bottom: 14px;
+    }
+    .card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+    .meta-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .q-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 700;
+      background: var(--primary-soft); color: var(--primary); padding: 3px 9px; border-radius: 6px;
+    }
+    .q-cat { font-size: 12px; color: var(--muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; }
+    .status-tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+    .status-mastered { background: var(--success-soft); color: var(--success); }
+    .status-review { background: var(--warning-soft); color: var(--warning); }
+
+    .question-text { font-size: 18px; font-weight: 700; line-height: 1.45; margin-bottom: 14px; }
+    .hint-box {
+      background: var(--card-alt); border-left: 3px solid var(--primary); padding: 10px 12px;
+      border-radius: 8px; font-size: 14px; color: var(--muted); margin-bottom: 14px;
+    }
+    .unit-goal {
+      background: var(--card-alt); border-left: 3px solid var(--primary);
+      padding: 10px 12px; border-radius: 8px; font-size: 14px; margin: 10px 0 0 0;
+    }
+    .reveal-box {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 26px 16px;
+      text-align: center; cursor: pointer; background: var(--card-alt);
+    }
+    .reveal-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+    .reveal-sub { font-size: 13px; color: var(--muted); }
+    .answer-box { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px; }
+    .answer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; font-size: 14px; font-weight: 700; color: var(--primary);
+    }
+    .answer-point { margin-bottom: 10px; font-size: 15px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; background: var(--card-alt); padding: 2px 5px; border-radius: 4px; }
+    pre.code-block {
+      background: var(--code-bg); color: var(--code-fg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px; line-height: 1.45; padding: 12px; border-radius: 10px; overflow-x: auto; margin: 10px 0 0 0;
+    }
+
+    .step-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+    .step-pill {
+      border: 1px solid var(--border); background: var(--card-alt); color: var(--muted);
+      font-size: 12px; font-weight: 700; padding: 6px 2px; border-radius: 8px; cursor: pointer; text-align: center;
+    }
+    .step-pill.active { background: var(--primary); border-color: var(--primary); color: var(--primary-fg); }
+    .step-pill.done { background: var(--success-soft); border-color: transparent; color: var(--success); }
+    .step-label { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .step-op { font-size: 17px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; }
+    .step-explain { margin-top: 12px; font-size: 15px; line-height: 1.55; }
+    .cmd-details {
+      margin-top: 12px; background: var(--card-alt); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 12px; font-size: 13px;
+    }
+    .cmd-details summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    .choice-list { display: grid; gap: 8px; margin-top: 12px; }
+    .choice-btn {
+      width: 100%; text-align: left; border: 1px solid var(--border); background: var(--card-alt); color: var(--text);
+      font-size: 14px; font-weight: 600; padding: 12px 14px; border-radius: 12px; cursor: pointer; line-height: 1.45;
+    }
+    .choice-btn.correct { background: var(--success-soft); border-color: var(--success); }
+    .choice-btn.wrong { background: var(--warning-soft); border-color: var(--warning); }
+    .diff-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    @media (min-width: 460px) { .diff-grid { grid-template-columns: 1fr 1fr; } }
+    .diff-panel { background: var(--card-alt); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .diff-panel-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .feedback-box { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+    .feedback-ok { background: var(--success-soft); border: 1px solid var(--success); }
+    .feedback-warn { background: var(--warning-soft); border: 1px solid var(--warning); }
+    .step-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .grade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn {
+      border: 1px solid var(--border); background: var(--card); color: var(--text);
+      font-size: 15px; font-weight: 600; padding: 12px 10px; border-radius: 12px; cursor: pointer; text-align: center;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+    .btn-success { background: var(--success-soft); color: var(--success); border-color: transparent; }
+    .btn-warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
+
+    .list-item {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+    }
+    .list-q-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .list-q-title { font-size: 16px; font-weight: 700; margin-top: 6px; }
+    .hidden { display: none !important; }
+    .swipe-tip { text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← 目錄</a>
+        <h1 class="title">⚙️ 單元測試與 CI／CD</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-badge" class="badge-progress">已記住 0 / 8</span>
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
+        <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-unit" class="tab-btn active" onclick="switchMode('unit')">📖 單元教學</button>
+      <button id="tab-flashcard" class="tab-btn" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
+      <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 管線總覽</button>
+    </div>
+
+    <div id="cat-bar" class="cat-bar hidden">
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (8)</button>
+      <button id="cat-test" class="cat-pill" onclick="setCategory('test')">單元測試 (3)</button>
+      <button id="cat-ci" class="cat-pill" onclick="setCategory('ci')">CI 持續整合 (3)</button>
+      <button id="cat-cd" class="cat-pill" onclick="setCategory('cd')">CD 持續部署 (2)</button>
+      <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
+    </div>
+
+    <!-- VIEW 0: Stage 3 Testing & CI/CD Unit 1 -->
+    <div id="view-unit">
+      <div class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span class="q-num">階段 3・測試與 CI／CD</span>
+            <span class="q-cat">本專案實裝・5～8 分鐘</span>
+            <span id="ci-u1-status" class="status-tag hidden"></span>
+          </div>
+          <span id="ci-unit-badge" class="q-cat">學完 0 / 1 單元</span>
+        </div>
+        <div class="question-text" style="margin-bottom:6px;">從本機單元測試到 GitHub Actions 自動亮綠燈</div>
+        <div class="unit-goal">
+          <b>學完要會做什麼：</b>能在本機跑完 <code>unittest</code> 測試套件，看懂本專案的 <code>.github/workflows/ci.yml</code> 如何在 PR 階段自動擋下壞改動。
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="ci-step-pills" class="step-pills"></div>
+        <div id="ci-body"></div>
+        <div class="step-nav">
+          <button id="btn-ci-prev" class="btn" onclick="prevCiStep()">← 上一步</button>
+          <button id="btn-ci-next" class="btn btn-primary" onclick="nextCiStep()">下一步 →</button>
+        </div>
+        <details class="cmd-details" style="margin-top:12px;">
+          <summary>📝 階段實作核對（本專案可直接實跑的指令）</summary>
+          <div style="margin-top:8px;line-height:1.55;">
+            • 在本專案目錄執行 <code>python3 -m unittest discover -s tests -v</code>，確認全部測試回傳 <code>OK</code>。<br />
+            • 開 PR 推送至 GitHub 後，在 PR 頁面底部查看 GitHub Actions 的 <code>CI / verify</code> 自動檢查結果。
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- VIEW 1: Flashcards -->
+    <div id="view-flashcard" class="hidden">
+      <div id="touch-card" class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span id="c-index" class="q-num">Q1 (1/8)</span>
+            <span id="c-cat" class="q-cat">單元測試</span>
+            <span id="c-status" class="status-tag hidden"></span>
+          </div>
+          <button id="btn-hint" class="icon-btn" onclick="toggleHint()">💡 提示</button>
+        </div>
+        <div id="c-question" class="question-text"></div>
+        <div id="c-hint" class="hint-box hidden"></div>
+        <div id="c-reveal" class="reveal-box" onclick="toggleAnswer()">
+          <div class="reveal-title">🔒 答案已隱藏（先在腦中回想）</div>
+          <div class="reveal-sub">點一下這裡打開答案</div>
+        </div>
+        <div id="c-answer" class="answer-box hidden">
+          <div class="answer-header">
+            <span>✓ 標準解析與記憶重點</span>
+            <span onclick="toggleAnswer()" style="color:var(--muted);font-weight:500;text-decoration:underline;cursor:pointer;">收起答案</span>
+          </div>
+          <div id="c-answer-points"></div>
+          <pre id="c-code" class="code-block hidden"></pre>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="btn" onclick="prevCard()">← 上一題</button>
+        <button id="btn-main-toggle" class="btn btn-primary" onclick="toggleAnswer()">👁 打開答案</button>
+        <button class="btn" onclick="nextCard()">下一題 →</button>
+      </div>
+      <div class="grade-grid">
+        <button class="btn btn-warning" onclick="markStatus('review')">↻ 待複習</button>
+        <button class="btn btn-success" onclick="markStatus('mastered')">✓ 已記住（下一題）</button>
+      </div>
+      <div class="swipe-tip">💡 支援手機左右滑動換題・進度自動儲存於瀏覽器</div>
+    </div>
+
+    <!-- VIEW 2: List -->
+    <div id="view-list" class="hidden">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+        <button class="icon-btn" onclick="toggleAllList(false)">🙈 全部隱藏</button>
+        <button class="icon-btn" onclick="toggleAllList(true)">👁 全部打開</button>
+      </div>
+      <div id="list-container"></div>
+    </div>
+
+    <!-- VIEW 3: CI/CD Pipeline Summary -->
+    <div id="view-arch" class="hidden">
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">1. 本專案真實 CI／CD 管線</div>
+        <pre class="code-block">[1. 本機開發]  寫程式 + python3 -m unittest discover -s tests -v
+      │  git push 開 PR
+      ▼
+[2. CI 自動檢查]  .github/workflows/ci.yml (permissions: contents: read)
+      │  跑全站連結測試 + 守衛函式測試 + python3 -O 檢查
+      │  ❌ 紅燈 -> 修好再推 | ✅ 綠燈 -> 合併回 main
+      ▼
+[3. CD 自動部署]  GitHub Pages 偵測 main 更新 -> 自動發布到手機網址</pre>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">2. 測試金字塔速記</div>
+        <div class="answer-point">• <b>單元測試（最多、最快）</b>：測單一函式／邊界值（毫秒級，無網路依賴）。</div>
+        <div class="answer-point">• <b>整合測試（適量）</b>：測 API 路由＋資料庫或檔案互動。</div>
+        <div class="answer-point">• <b>E2E 端對端測試（精選核心流程）</b>：用真實瀏覽器測關鍵動線（慢但最貼近使用者）。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CARDS = [
+      {
+        id: 1,
+        cat: "test",
+        catName: "單元測試",
+        q: "寫單元測試時常說的「3A 原則（Arrange / Act / Assert）」分別在做什麼？",
+        hint: "準備輸入資料 → 呼叫目標函式 → 驗證結果是否符合預期。",
+        ans: [
+          "• <b>Arrange（準備）</b>：建立測試用的輸入資料與前置狀態（例如 <code>bad_input = ['git']</code>）。",
+          "• <b>Act（執行）</b>：呼叫被測函式（例如 <code>ok, msg = validate_topic(bad_input)</code>）。",
+          "• <b>Assert（斷言）</b>：驗證回傳值或狀態符合預期（例如 <code>self.assertFalse(ok)</code>）。"
+        ],
+        code: "def test_array_topic_rejected(self):\n    raw = ['git']                         # Arrange\n    ok, _ = validate_topic(raw)           # Act\n    self.assertFalse(ok)                  # Assert"
+      },
+      {
+        id: 2,
+        cat: "test",
+        catName: "單元測試",
+        q: "寫單元測試時，為什麼不能只測「正常輸入」，一定要測「邊界值與惡意輸入」？",
+        hint: "想想看我們之前被 Codex 抓出的 ['2']、-1、1.5、../.env 與損壞 JSON。",
+        ans: [
+          "• <b>正常輸入通常本來就會過</b>；真正會釀成線上故障或資安漏洞的，幾乎都是空字串、負數、小數、陣列、路徑穿越（<code>../.env</code>）或損壞資料。",
+          "• 把每個修過的 Bug 都補成一條邊界測試（回歸測試），就能防止未來改版時不小心改壞。"
+        ],
+        code: "for bad in [['git'], '', '../.env', 'a' * 51, None]:\n    self.assertFalse(validate_topic(bad)[0])"
+      },
+      {
+        id: 3,
+        cat: "test",
+        catName: "單元測試",
+        q: "單元測試（Unit）、整合測試（Integration）與端對端測試（E2E）在「測試金字塔」中怎麼分配？",
+        hint: "越底層跑越快、成本越低；越頂層越貼近真實使用者但也越慢。",
+        ans: [
+          "• <b>底層 — 單元測試（最多）</b>：不連網路不連真 DB，毫秒內跑完大量邏輯與邊界檢查。",
+          "• <b>中層 — 整合測試（適量）</b>：驗證 API、中介層與資料庫／檔案系統合起來能否正確運作。",
+          "• <b>頂層 — E2E 測試（精選關鍵流程）</b>：用真實瀏覽器模擬點擊核心動線，確保整條產品鏈沒斷。"
+        ],
+        code: "      /\\       E2E (少而精：核心動線)\n     /  \\      Integration (適量：模組整合)\n    /____\\     Unit Test (最多、最快：函式與邊界)"
+      },
+      {
+        id: 4,
+        cat: "ci",
+        catName: "CI 持續整合",
+        q: "什麼是 CI（Continuous Integration，持續整合）？它解決團隊開發的什麼痛點？",
+        hint: "不要等到合併上線前一天才發現「在我電腦上可以跑，在你那裡壞了」。",
+        ans: [
+          "• <b>核心做法</b>：每次推送分支或開 PR 時，自動在雲端乾淨環境執行編譯、單元測試與靜態檢查。",
+          "• <b>核心價值</b>：把錯誤攔截在「合併進 <code>main</code> 之前」，讓主幹永遠維持可上線的健康狀態。"
+        ],
+        code: "git push -> GitHub Actions 自動跑 unittest -> ✅ 綠燈才合併回 main"
+      },
+      {
+        id: 5,
+        cat: "ci",
+        catName: "CI 持續整合",
+        q: "GitHub Actions 的 .github/workflows/ci.yml 中，on、permissions、jobs／steps 各代表什麼？",
+        hint: "何時觸發？給多少權限？要跑哪些步驟？",
+        ans: [
+          "• <b><code>on</code></b>：觸發事件（例如 <code>push</code> 到 <code>main</code> 或發起 <code>pull_request</code>）。",
+          "• <b><code>permissions</code></b>：最小權限設定（純跑測試只給 <code>contents: read</code>，避免外洩寫入權限）。",
+          "• <b><code>jobs</code> / <code>steps</code></b>：指定雲端虛擬機（如 <code>ubuntu-latest</code>）並依序執行簽出程式碼、裝 Python 與跑測試指令。"
+        ],
+        code: "on: [push, pull_request]\npermissions:\n  contents: read\njobs:\n  verify:\n    runs-on: ubuntu-latest"
+      },
+      {
+        id: 6,
+        cat: "ci",
+        catName: "CI 持續整合",
+        q: "為什麼測試在「乾淨的 CI Runner」跑過，比「在我自己電腦上能跑」更有說服力？",
+        hint: "你的 Mac 上可能裝了全域套件、舊快取或未提交的本機設定檔。",
+        ans: [
+          "• <b>排除本機環境汙染</b>：CI Runner 每次都從零啟動一台乾淨虛擬機，只拿你真的 commit 進 Git 的檔案來跑測試。",
+          "• 只要漏裝依賴、漏 commit 檔案、或寫死本機絕對路徑（如 <code>/Users/dev/...</code>），CI 立刻會亮紅燈抓出來。"
+        ],
+        code: "本機通過 ≠ 別人能跑\n乾淨 CI Runner 通過 = 只靠 Git 紀錄即可重現通過"
+      },
+      {
+        id: 7,
+        cat: "cd",
+        catName: "CD 持續部署",
+        q: "CD 常同時指「持續交付（Continuous Delivery）」與「持續部署（Continuous Deployment）」，差別在哪？",
+        hint: "差別在最後一步上線前「要不要人工按那顆發布鈕」。",
+        ans: [
+          "• <b>Continuous Delivery（持續交付）</b>：測試通過後自動打包準備好，但最後上線到正式環境仍由人工核准按下發布（適合金融、醫療等高風險系統）。",
+          "• <b>Continuous Deployment（持續部署）</b>：只要 CI 全綠燈並合併進 <code>main</code>，系統就<b>全自動部署上線</b>（像你現在的 GitHub Pages！）。"
+        ],
+        code: "持續交付：CI 通過 -> 人工核准發布\n持續部署：CI 通過 + 合併 main -> 全自動上線（如 GitHub Pages）"
+      },
+      {
+        id: 8,
+        cat: "cd",
+        catName: "CD 持續部署",
+        q: "自動部署上線後才發現嚴重 Bug，最穩妥的快速止血方式是什麼？",
+        hint: "先讓線上恢復正常版本，再慢慢修 Bug。",
+        ans: [
+          "• <b>優先 Rollback / <code>git revert</code></b>：不要在線上急著盲改新程式；立刻對出事的合併提交執行 <code>git revert</code> 推回 <code>main</code>，讓 CD 自動把網站退回上一個穩定版本。",
+          "• 止血後再開分支修 Bug、補一條會抓到這個 Bug 的單元測試，走完整 CI 流程再重新上線。"
+        ],
+        code: "線上出事 -> git revert 退回穩定版（止血） -> 補回歸測試 -> 修復重上"
+      }
+    ];
+
+    const STORAGE_KEY = "agy_cicd_flashcards_v1";
+    const UNIT_STORAGE_KEY = "agy_cicd_units_v1";
+    const THEME_KEY = "agy_study_theme_v1";
+
+    let statusMap = {};
+    let unitMap = {};
+    let listOpenMap = {};
+    let currentMode = "unit";
+    let currentCat = "all";
+    let currentIdx = 0;
+    let showAns = false;
+    let showHint = false;
+    let ciStep = 0;
+    let ciPred = null;
+    let ciQuiz = null;
+
+    function readJsonMap(key) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      statusMap = readJsonMap(STORAGE_KEY);
+      unitMap = readJsonMap(UNIT_STORAGE_KEY);
+    } catch (_) {}
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function saveCardStatus(cardId, state) {
+      const latest = readJsonMap(STORAGE_KEY);
+      latest[cardId] = state;
+      statusMap = latest;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap)); } catch (_) {}
+    }
+
+    function saveUnitDone(unitId) {
+      const latest = readJsonMap(UNIT_STORAGE_KEY);
+      latest[unitId] = true;
+      unitMap = latest;
+      try { localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap)); } catch (_) {}
+    }
+
+    function getFiltered() {
+      if (currentCat === "all") return CARDS;
+      if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
+      return CARDS.filter(c => c.cat === currentCat);
+    }
+
+    function updateBadges() {
+      const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
+      const review = Object.values(statusMap).filter(v => v === "review").length;
+      const unitsDone = Object.values(unitMap).filter(Boolean).length;
+      document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
+      document.getElementById("cat-review").textContent = `待複習 (${review})`;
+      document.getElementById("ci-unit-badge").textContent = `學完 ${unitsDone} / 1 單元`;
+      const st = document.getElementById("ci-u1-status");
+      if (unitMap.unit1) {
+        st.textContent = "✓ 已完成";
+        st.className = "status-tag status-mastered";
+      } else {
+        st.className = "status-tag hidden";
+      }
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      ["unit", "flashcard", "list", "arch"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
+      });
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch" || mode === "unit");
+      if (mode === "unit") renderCiUnit();
+      if (mode === "flashcard") renderCard();
+      if (mode === "list") renderList();
+    }
+
+    function setCategory(cat) {
+      currentCat = cat;
+      currentIdx = 0;
+      showAns = false;
+      showHint = false;
+      ["all", "test", "ci", "cd", "review"].forEach(c => {
+        document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
+      });
+      if (currentMode === "flashcard") renderCard();
+      if (currentMode === "list") renderList();
+    }
+
+    function reviewCiCards() {
+      switchMode("flashcard");
+      setCategory("all");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setCiStep(idx) { ciStep = Math.max(0, Math.min(4, idx)); renderCiUnit(); }
+    function prevCiStep() { if (ciStep > 0) setCiStep(ciStep - 1); }
+    function nextCiStep() { if (ciStep < 4) setCiStep(ciStep + 1); }
+    function pickCiPred(c) { ciPred = c; renderCiUnit(); }
+    function pickCiQuiz(c) {
+      ciQuiz = c;
+      if (c === 0) { saveUnitDone("unit1"); }
+      renderCiUnit();
+    }
+
+    function renderCiUnit() {
+      updateBadges();
+      const labels = ["1. 寫測試", "2. 本機跑", "3. 接上 CI", "4. 卡點預測", "5. 驗收題"];
+      document.getElementById("ci-step-pills").innerHTML = labels.map((lb, i) => {
+        const cls = i === ciStep ? "step-pill active" : (i === 4 && unitMap.unit1) ? "step-pill done" : "step-pill";
+        return `<button class="${cls}" onclick="setCiStep(${i})">${lb}</button>`;
+      }).join("");
+
+      const body = document.getElementById("ci-body");
+      if (ciStep === 0) {
+        body.innerHTML = `
+          <div class="step-label">步驟 1 / 5・寫出第一支標準單元測試</div>
+          <div class="step-op">在 <code>tests/test_study_cards.py</code> 用 <code>unittest</code> 驗證邊界與全站連結</div>
+          <pre class="code-block">class TestGuardrails(unittest.TestCase):
+    def test_invalid_topics_rejected(self):
+        for bad in [["git"], "", "../.env", None]:
+            ok, _ = guardrails.validate_topic(bad)
+            self.assertFalse(ok)</pre>
+          <div class="step-explain">用 <code>self.assertFalse</code> 不受 <code>python3 -O</code> 影響，且清楚切出「準備 → 執行 → 斷言」。</div>
+        `;
+      } else if (ciStep === 1) {
+        body.innerHTML = `
+          <div class="step-label">步驟 2 / 5・本機實跑測試套件</div>
+          <div class="step-op">執行 <code>python3 -m unittest discover -s tests -v</code></div>
+          <pre class="code-block">test_all_html_pages_and_internal_links ... ok
+test_all_study_pages_use_hardened_storage_and_sync_with_index ... ok
+test_invalid_topics_rejected ... ok
+----------------------------------------------------------------------
+Ran 6 tests in 0.012s — OK</pre>
+          <div class="step-explain">只要 0.01 秒就能自動驗證全站 10 個頁面的連結、儲存邏輯與守衛函式，比人眼檢查快又準。</div>
+        `;
+      } else if (ciStep === 2) {
+        body.innerHTML = `
+          <div class="step-label">步驟 3 / 5・用 GitHub Actions 自動化 CI</div>
+          <div class="step-op">建立 <code>.github/workflows/ci.yml</code>，每次開 PR 自動在乾淨虛擬機跑測試</div>
+          <pre class="code-block">on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s tests -v</pre>
+          <div class="step-explain">搭配你既有的 GitHub Pages（CD），這就構成完整的 <b>CI（自動驗證）＋ CD（合併自動上線）</b> 管線。</div>
+        `;
+      } else if (ciStep === 3) {
+        const predHtml = ciPred !== null ? `
+          <div class="feedback-box ${ciPred === 0 ? "feedback-ok" : "feedback-warn"}">
+            <b>${ciPred === 0 ? "✓ 完全正確！" : "↻ 這正是 CI 保護主幹的價值所在！"}</b>
+            CI 會在 PR 頁面自動亮紅燈並印出哪個檔案的哪條連結失效；只要修完再推送，CI 會重跑變綠燈，避免把壞網頁推上手機。
+          </div>
+        ` : "";
+        body.innerHTML = `
+          <div class="step-label">步驟 4 / 5・常見卡點預測</div>
+          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>你在新分支把 <code>index.html</code> 裡的連結拼錯成 <code>git_study.html</code>，本機忘了跑測試就直接推上 GitHub 開 PR。</div>
+          <div class="step-op">接上 <code>.github/workflows/ci.yml</code> 後會發生什麼事？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${ciPred === 0 ? "correct" : ""}" onclick="pickCiPred(0)">A. GitHub Actions 自動跑 unittest 並亮紅燈，直接指出 Broken href 擋下合併</button>
+            <button class="choice-btn ${ciPred === 1 ? "wrong" : ""}" onclick="pickCiPred(1)">B. 不會有任何提示，直到合併上線後在手機點下去 404 才會發現</button>
+          </div>
+          ${predHtml}
+        `;
+      } else {
+        const showPassed = ciQuiz === 0 || (ciQuiz === null && unitMap.unit1);
+        const fb = showPassed ? `
+          <div class="feedback-box feedback-ok">
+            <b>✓ ${ciQuiz === 0 ? "答對了！已完成單元測試與 CI／CD 單元" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
+            看到 CI 紅燈代表自動化防線成功幫你抓到 Bug：先看失敗日誌、在同分支修好並於本機跑過 <code>unittest</code>，再推送讓 CI 轉綠燈後才合併！
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary" style="width:100%;" onclick="reviewCiCards()">👉 複習單元測試與 CI／CD 題卡（8 題）</button>
+            </div>
+          </div>
+        ` : ciQuiz !== null ? `
+          <div class="feedback-box feedback-warn">
+            <b>想想看 CI 的目的：</b>刪掉測試或強行合併只會把 404 壞連結送到線上！哪個做法才真正修掉問題並讓 CI 變綠燈？
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          <div class="step-label">步驟 5 / 5・單元驗收</div>
+          <div class="step-op">在 PR 頁面看到 CI 亮紅燈與以下失敗日誌，最正確的處理流程是什麼？</div>
+          <pre class="code-block">FAIL: test_all_html_pages_and_internal_links
+AssertionError: Broken href git_study.html in index.html</pre>
+          <div class="choice-list">
+            <button class="choice-btn ${ciQuiz === 0 ? "correct" : ""}" onclick="pickCiQuiz(0)">A. 修正 index.html 錯字、本機跑完 unittest 通過後再 push，等 CI 變綠燈才合併</button>
+            <button class="choice-btn ${ciQuiz === 1 ? "wrong" : ""}" onclick="pickCiQuiz(1)">B. 把 test_all_html_pages_and_internal_links 刪掉讓 CI 變綠燈</button>
+            <button class="choice-btn ${ciQuiz === 2 ? "wrong" : ""}" onclick="pickCiQuiz(2)">C. 忽略紅燈直接強行合併回 main，等上線後再說</button>
+          </div>
+          ${fb}
+        `;
+      }
+
+      const prevBtn = document.getElementById("btn-ci-prev");
+      const nextBtn = document.getElementById("btn-ci-next");
+      prevBtn.disabled = ciStep === 0;
+      prevBtn.style.opacity = ciStep === 0 ? "0.45" : "1";
+      prevBtn.style.gridColumn = ciStep === 4 ? "1 / -1" : "";
+      nextBtn.classList.toggle("hidden", ciStep === 4);
+    }
+
+    function renderCard() {
+      const list = getFiltered();
+      updateBadges();
+      if (!list.length) {
+        document.getElementById("c-index").textContent = "0 / 0";
+        document.getElementById("c-cat").textContent = "無題目";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (8)」繼續練習。";
+        document.getElementById("c-hint").classList.add("hidden");
+        document.getElementById("c-reveal").classList.add("hidden");
+        document.getElementById("c-answer").classList.add("hidden");
+        document.getElementById("c-status").classList.add("hidden");
+        return;
+      }
+      if (currentIdx >= list.length) currentIdx = 0;
+      if (currentIdx < 0) currentIdx = list.length - 1;
+      const card = list[currentIdx];
+      document.getElementById("c-index").textContent = `Q${card.id} (${currentIdx + 1}/${list.length})`;
+      document.getElementById("c-cat").textContent = card.catName;
+      document.getElementById("c-question").textContent = card.q;
+      const stEl = document.getElementById("c-status");
+      const st = statusMap[card.id];
+      if (st === "mastered") { stEl.textContent = "✓ 已記住"; stEl.className = "status-tag status-mastered"; }
+      else if (st === "review") { stEl.textContent = "↻ 待複習"; stEl.className = "status-tag status-review"; }
+      else { stEl.className = "status-tag hidden"; }
+      const hintEl = document.getElementById("c-hint");
+      hintEl.textContent = `💡 提示：${card.hint}`;
+      hintEl.classList.toggle("hidden", !showHint);
+      document.getElementById("c-answer-points").innerHTML = card.ans.map(line => `<div class="answer-point">${line}</div>`).join("");
+      const codeEl = document.getElementById("c-code");
+      if (card.code) { codeEl.textContent = card.code; codeEl.classList.remove("hidden"); }
+      else { codeEl.classList.add("hidden"); }
+      document.getElementById("c-reveal").classList.toggle("hidden", showAns);
+      document.getElementById("c-answer").classList.toggle("hidden", !showAns);
+      document.getElementById("btn-main-toggle").textContent = showAns ? "🙈 隱藏答案" : "👁 打開答案";
+    }
+
+    function toggleAnswer() { if (!getFiltered().length) return; showAns = !showAns; renderCard(); }
+    function toggleHint() { if (!getFiltered().length) return; showHint = !showHint; renderCard(); }
+    function nextCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx + 1) % l.length; showAns = false; showHint = false; renderCard(); }
+    function prevCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx - 1 + l.length) % l.length; showAns = false; showHint = false; renderCard(); }
+    function markStatus(state) {
+      const l = getFiltered(); if (!l.length) return;
+      saveCardStatus(l[currentIdx].id, state); updateBadges();
+      if (state === "mastered") nextCard(); else renderCard();
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const box = document.getElementById("list-container");
+      updateBadges();
+      if (!list.length) { box.innerHTML = `<div class="card">目前此分類沒有題目。</div>`; return; }
+      box.innerHTML = list.map(card => {
+        const open = !!listOpenMap[card.id];
+        const st = statusMap[card.id];
+        const stBadge = st === "mastered" ? `<span class="status-tag status-mastered">✓ 已記住</span>`
+          : st === "review" ? `<span class="status-tag status-review">↻ 待複習</span>` : "";
+        return `
+          <div class="list-item">
+            <div class="list-q-row" onclick="toggleListOne(${card.id})">
+              <div>
+                <div class="meta-left">
+                  <span class="q-num">Q${card.id}</span>
+                  <span class="q-cat">${card.catName}</span>
+                  ${stBadge}
+                </div>
+                <div class="list-q-title">${escapeHtml(card.q)}</div>
+              </div>
+              <button class="icon-btn" style="flex-shrink:0;white-space:nowrap;">${open ? "🙈 收起" : "👁 答案"}</button>
+            </div>
+            ${open ? `
+              <div class="answer-box">
+                <div class="hint-box">💡 提示：${escapeHtml(card.hint)}</div>
+                ${card.ans.map(line => `<div class="answer-point">${line}</div>`).join("")}
+                ${card.code ? `<pre class="code-block">${escapeHtml(card.code)}</pre>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+    function toggleListOne(id) { listOpenMap[id] = !listOpenMap[id]; renderList(); }
+    function toggleAllList(openState) { CARDS.forEach(c => { listOpenMap[c.id] = openState; }); renderList(); }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const cur = root.getAttribute("data-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const next = (cur ? cur === "dark" : prefersDark) ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+    }
+
+    function resetAll() {
+      if (!confirm("確定要重置「單元測試與 CI／CD」的單元與題卡進度嗎？")) return;
+      statusMap = {}; unitMap = {}; listOpenMap = {};
+      showAns = false; showHint = false; currentIdx = 0; ciStep = 0; ciPred = null; ciQuiz = null;
+      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UNIT_STORAGE_KEY); } catch (_) {}
+      setCategory("all");
+      if (currentMode === "unit") renderCiUnit();
+    }
+
+    let touchStartX = 0, touchStartY = 0;
+    const touchCard = document.getElementById("touch-card");
+    touchCard.addEventListener("touchstart", e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: true });
+    touchCard.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) nextCard(); else prevCard(); }
+    }, { passive: true });
+
+    renderCiUnit();
+    renderCard();
+  </script>
+</body>
+</html>
