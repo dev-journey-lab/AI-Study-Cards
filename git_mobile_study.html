@@ -1436,9 +1436,10 @@ git commit</pre>
             <div class="step-explain">此例預設只暫存<b>已追蹤檔案</b>的改動，讓工作目錄恢復乾淨好切去修急件；若要連未追蹤的新檔案一併收進抽屜，加上 <code>-u</code>。修完切回再用 <code>git stash pop</code> 取回。</div>
             <details class="cmd-details">
               <summary>展開完整指令</summary>
-              <pre class="code-block">git stash push -m "WIP: unit4"       # 僅暫存已追蹤檔案
-git stash push -u -m "WIP: +newfile" # 連未追蹤的新檔一併暫存
-git switch main                      # 去修急件
+              <pre class="code-block"># 二選一（只執行其中一行）：
+git stash push -m "WIP: unit4"          # 只收起已追蹤檔案
+# git stash push -u -m "WIP: unit4"     # 連未追蹤新檔一併收起時改用這行
+git switch main                         # 去修急件
 git switch feat/u4 && git stash pop</pre>
             </details>
           `;
