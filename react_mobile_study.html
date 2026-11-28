@@ -862,17 +862,18 @@
       const body = document.getElementById("rx-body");
       if (rxStep === 0) {
         body.innerHTML = `
-          <div class="step-label">步驟 1 / 5・先規劃畫面四種狀態</div>
-          <div class="step-op">用三個 State 覆蓋「載入中、錯誤、空資料、成功」</div>
+          <div class="step-label">步驟 1 / 5・先規劃畫面四種狀態與重試計數</div>
+          <div class="step-op">用 State 覆蓋「載入中、錯誤、空資料、成功」與重試觸發</div>
           <pre class="code-block">const [cards, setCards] = useState([]);
 const [loading, setLoading] = useState(true);
-const [error, setError] = useState(null);</pre>
-          <div class="step-explain">寫介面之前先想好 4 種狀態，才不會在資料還沒回來或 API 失敗時出現一片空白。</div>
+const [error, setError] = useState(null);
+const [retryKey, setRetryKey] = useState(0); // 遞增即可重跑同一主題請求</pre>
+          <div class="step-explain">寫介面之前先想好 4 種狀態與重試觸發器，才不會在失敗時卡死畫面或無法重試同一主題。</div>
         `;
       } else if (rxStep === 1) {
         body.innerHTML = `
           <div class="step-label">步驟 2 / 5・在 useEffect 安全抓資料與取消舊請求</div>
-          <div class="step-op">搭配 <code>AbortController</code>，更新狀態前全數檢查 <code>!ctrl.signal.aborted</code></div>
+          <div class="step-op">依賴 <code>[topic, retryKey]</code>，更新狀態前全數檢查 <code>!ctrl.signal.aborted</code></div>
           <pre class="code-block">useEffect(() => {
   const ctrl = new AbortController();
   setLoading(true); setError(null);
@@ -882,18 +883,19 @@ const [error, setError] = useState(null);</pre>
     .catch(err => { if (!ctrl.signal.aborted) setError(err); })
     .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
   return () => ctrl.abort();
-}, [topic]);</pre>
-          <div class="step-explain">三個更新前都加守衛，既防止舊資料覆蓋新畫面，也防止舊請求被取消時提早把 <code>loading</code> 關掉。</div>
+}, [topic, retryKey]);</pre>
+          <div class="step-explain">三個更新前都加守衛，既防止舊資料覆蓋新畫面，也不會提早關掉 <code>loading</code>；加上 <code>retryKey</code> 就能重試同一主題。</div>
         `;
       } else if (rxStep === 2) {
         body.innerHTML = `
           <div class="step-label">步驟 3 / 5・依序條件渲染四態畫面</div>
-          <div class="step-op">先擋 <code>loading</code> 與 <code>error</code>，再分流空資料與正常列表</div>
-          <pre class="code-block">if (loading) return &lt;p&gt;載入題庫中...&lt;/p&gt;;
+          <div class="step-op">先擋 <code>loading</code> 與 <code>error</code>（附可運作的重試），再分流空資料與列表</div>
+          <pre class="code-block">const retry = () =&gt; setRetryKey(k =&gt; k + 1);
+if (loading) return &lt;p&gt;載入題庫中...&lt;/p&gt;;
 if (error) return &lt;button onClick={retry}&gt;載入失敗，點此重試&lt;/button&gt;;
 if (cards.length === 0) return &lt;p&gt;此主題目前沒有題目&lt;/p&gt;;
 return cards.map(c =&gt; &lt;StudyCard key={c.id} card={c} /&gt;);</pre>
-          <div class="step-explain">錯誤畫面附上明確「重試」按鈕，列表則使用穩定的 <code>c.id</code> 當作 <code>key</code>。</div>
+          <div class="step-explain">點重試會遞增 <code>retryKey</code> 重新觸發 <code>useEffect</code>，列表則使用穩定的 <code>c.id</code> 當作 <code>key</code>。</div>
         `;
       } else if (rxStep === 3) {
         const predHtml = rxPred !== null ? `

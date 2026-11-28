@@ -571,24 +571,27 @@ study-api  Up 2 minutes    8000/tcp</pre>
         `;
       } else if (dkStep === 1) {
         body.innerHTML = `
-          <div class="step-label">步驟 2 / 5・最小驗證：補上埠映射再查日誌（示意輸出）</div>
-          <div class="step-op">改用 <code>-p 8000:8000</code> 啟動，並用 <code>docker logs</code> 看監聽位址</div>
+          <div class="step-label">步驟 2 / 5・最小驗證：移除舊容器、補上埠映射再查日誌（示意輸出）</div>
+          <div class="step-op">先 <code>docker rm -f study-api</code> 避免撞名，改用 <code>-p 127.0.0.1:8000:8000</code> 啟動</div>
           <pre class="code-block"># 【示意輸出】
-docker run -d --name study-api -p 8000:8000 study-api:dev
+docker rm -f study-api
+docker run -d --name study-api -p 127.0.0.1:8000:8000 study-api:dev
 docker logs study-api
 INFO: Uvicorn running on http://127.0.0.1:8000</pre>
-          <div class="step-explain">雖然埠已經映射出來，但日誌顯示服務只綁在容器自己的 <code>127.0.0.1</code>，宿主機依然連不進去！</div>
+          <div class="step-explain">宿主機用 <code>127.0.0.1:8000:8000</code> 只對本機開放較安全；但日誌顯示容器內服務仍只綁 <code>127.0.0.1</code>，宿主機依然連不進去！</div>
         `;
       } else if (dkStep === 2) {
         body.innerHTML = `
-          <div class="step-label">步驟 3 / 5・修正監聽位址並驗證連通（示意輸出）</div>
-          <div class="step-op">讓容器內服務監聽 <code>0.0.0.0:8000</code>，再用 <code>curl</code> 驗證</div>
-          <pre class="code-block"># 【示意輸出】
-# CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+          <div class="step-label">步驟 3 / 5・改監聽 0.0.0.0、重建映像與容器後驗證（示意輸出）</div>
+          <div class="step-op">修改 Dockerfile 讓容器內監聽 <code>0.0.0.0:8000</code>，重 build 並重建容器</div>
+          <pre class="code-block"># 【示意輸出】Dockerfile CMD 改為 --host 0.0.0.0 後重新建置與啟動
+docker build -t study-api:dev .
+docker rm -f study-api
+docker run -d --name study-api -p 127.0.0.1:8000:8000 study-api:dev
 curl -i http://localhost:8000/health
 HTTP/1.1 200 OK
 {"status":"ok"}</pre>
-          <div class="step-explain"><code>0.0.0.0</code> 代表接受容器所有網路介面轉進來的流量，搭配 <code>-p 8000:8000</code> 宿主機瀏覽器就能順利連通。</div>
+          <div class="step-explain"><b>區分兩側位址：</b>容器內綁 <code>0.0.0.0:8000</code> 才能收 Docker 轉發封包；宿主機 <code>-p 127.0.0.1:8000:8000</code> 則限制只給本機連入。</div>
         `;
       } else if (dkStep === 3) {
         const predHtml = dkPred !== null ? `

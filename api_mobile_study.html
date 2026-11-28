@@ -922,22 +922,25 @@ DELETE /cards  -> 403 Forbidden    (伺服器理解請求但拒絕處理)</pre>
         const fb = showPassed ? `
           <div class="feedback-box feedback-ok">
             <b>✓ ${apiQuiz === 1 ? "答對了！已完成 API 單元 1" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
-            <code>OPTIONS -> 204</code> 證明 CORS 預檢已經通過；真正失敗的是後續 <code>GET</code> 回 <code>401</code> 且請求少了 <code>Authorization</code> 標頭，直接補上有效憑證（或導向登入）即可！
+            <code>OPTIONS 204</code> 與 <code>GET 401</code> 兩邊都帶有符合的 <code>Access-Control-Allow-Origin</code> 標頭，代表 CORS 沒有擋住（前端也讀得到 401）；真正失敗的是 <code>GET</code> 請求少了 <code>Authorization</code> 標頭，補上有效憑證或導向登入即可！
             <div style="margin-top:10px;">
               <button class="btn btn-primary" style="width:100%;" onclick="reviewApiCards()">👉 複習 API 流程題卡（10 題）</button>
             </div>
           </div>
         ` : apiQuiz !== null ? `
           <div class="feedback-box feedback-warn">
-            <b>看 Network 的兩條證據：</b><code>OPTIONS</code> 已經 <code>204</code> 代表 CORS 沒擋，問題出在下一行 <code>GET -> 401</code> 與少了 <code>Authorization</code>！再選一次。
+            <b>看 Network 的完整證據：</b><code>OPTIONS</code> 與 <code>GET</code> 回應都有正確的 CORS 標頭，問題是 <code>GET -> 401</code> 且少了 <code>Authorization</code>！再選一次。
           </div>
         ` : "";
 
         body.innerHTML = `
           <div class="step-label">步驟 5 / 5・單元驗收</div>
           <div class="step-op">在 DevTools Network 看到以下紀錄，最直接的排查方向是什麼？</div>
-          <pre class="code-block">OPTIONS /api/cards  -> 204 No Content
-GET     /api/cards  -> 401 Unauthorized
+          <pre class="code-block">OPTIONS /api/cards -> 204 No Content
+  Access-Control-Allow-Origin: https://dev-journey-lab.github.io
+  Access-Control-Allow-Headers: Authorization
+GET     /api/cards -> 401 Unauthorized
+  Access-Control-Allow-Origin: https://dev-journey-lab.github.io
 Request Headers: (未見 Authorization 標頭)</pre>
           <div class="choice-list">
             <button class="choice-btn ${apiQuiz === 0 ? "wrong" : ""}" onclick="pickApiQuiz(0)">A. 這是 CORS 被瀏覽器擋住，要叫後端重改 OPTIONS 標頭</button>
