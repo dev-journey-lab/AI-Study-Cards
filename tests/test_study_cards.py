@@ -45,10 +45,16 @@ class TestStudyCardsSite(unittest.TestCase):
             content = Path(path_str).read_text(encoding="utf-8")
             self.assertIn("<!DOCTYPE html>", content, path_str)
             self.assertIn("</html>", content, path_str)
-            for href in re.findall(r'href="([^"]+\.html)"', content):
-                self.assertTrue((ROOT / href).exists(), f"Broken href {href} in {path_str}")
+            # Check both static HTML href="..." and JS DECKS href: "..."
+            refs = set(re.findall(r'href="([^"]+\.html)"', content))
+            refs.update(re.findall(r'href:\s*"([^"]+\.html)"', content))
+            if Path(path_str).name == "index.html":
+                self.assertEqual(len(refs), 9, f"Expected 9 deck links in index.html, got {refs}")
+            for href in sorted(refs):
+                self.assertTrue((ROOT / href).exists(), f"Broken href {href} in {Path(path_str).name}")
 
-    def test_all_study_pages_use_hardened_storage_and_sync_with_index(self):
+    def test_all_study_pages_have_storage_structure_and_index_keys(self):
+        """Static check for storage helper structure and index.html key sync."""
         index_text = (ROOT / "index.html").read_text(encoding="utf-8")
         study_pages = [
             p for p in sorted(ROOT.glob("*.html")) if p.name != "index.html"
