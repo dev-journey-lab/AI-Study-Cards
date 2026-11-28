@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Docker 與日誌排查 — 手機隨身學習冊</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #4f46e5;
+      --primary-fg: #ffffff;
+      --primary-soft: #e0e7ff;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #d97706;
+      --warning-soft: #fef3c7;
+      --code-bg: #1e293b;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-alt: #334155;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #818cf8;
+        --primary-fg: #0f172a;
+        --primary-soft: rgba(129, 140, 248, 0.2);
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.2);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.2);
+        --code-bg: #020617;
+        --code-fg: #e2e8f0;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #818cf8;
+      --primary-fg: #0f172a;
+      --primary-soft: rgba(129, 140, 248, 0.2);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.2);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.2);
+      --code-bg: #020617;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 84px) 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .container { max-width: 600px; margin: 0 auto; }
+
+    .header {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 12px 0 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .back-btn {
+      text-decoration: none; background: var(--card); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 5px 9px; font-size: 13px; font-weight: 600; white-space: nowrap;
+    }
+    .title { font-size: 17px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .badge-progress {
+      font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+      background: var(--primary-soft); color: var(--primary); white-space: nowrap;
+    }
+    .icon-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      border-radius: 8px; padding: 6px 9px; font-size: 13px; cursor: pointer;
+    }
+
+    .tabs {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+      background: var(--card-alt); padding: 4px; border-radius: 12px; margin-bottom: 12px;
+    }
+    .tab-btn {
+      border: none; background: transparent; color: var(--muted);
+      font-size: 13px; font-weight: 600; padding: 9px 2px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+    }
+    .tab-btn.active { background: var(--card); color: var(--primary); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); }
+
+    .cat-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; scrollbar-width: none; }
+    .cat-bar::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      white-space: nowrap; border: 1px solid var(--border); background: var(--card); color: var(--muted);
+      padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .cat-pill.active { border-color: var(--primary); background: var(--primary); color: var(--primary-fg); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px; box-shadow: var(--shadow); margin-bottom: 14px;
+    }
+    .card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+    .meta-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .q-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 700;
+      background: var(--primary-soft); color: var(--primary); padding: 3px 9px; border-radius: 6px;
+    }
+    .q-cat { font-size: 12px; color: var(--muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; }
+    .status-tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+    .status-mastered { background: var(--success-soft); color: var(--success); }
+    .status-review { background: var(--warning-soft); color: var(--warning); }
+
+    .question-text { font-size: 18px; font-weight: 700; line-height: 1.45; margin-bottom: 14px; }
+    .hint-box {
+      background: var(--card-alt); border-left: 3px solid var(--primary); padding: 10px 12px;
+      border-radius: 8px; font-size: 14px; color: var(--muted); margin-bottom: 14px;
+    }
+    .unit-goal {
+      background: var(--card-alt); border-left: 3px solid var(--primary);
+      padding: 10px 12px; border-radius: 8px; font-size: 14px; margin: 10px 0 0 0;
+    }
+    .reveal-box {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 26px 16px;
+      text-align: center; cursor: pointer; background: var(--card-alt);
+    }
+    .reveal-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+    .reveal-sub { font-size: 13px; color: var(--muted); }
+    .answer-box { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px; }
+    .answer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; font-size: 14px; font-weight: 700; color: var(--primary);
+    }
+    .answer-point { margin-bottom: 10px; font-size: 15px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; background: var(--card-alt); padding: 2px 5px; border-radius: 4px; }
+    pre.code-block {
+      background: var(--code-bg); color: var(--code-fg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px; line-height: 1.45; padding: 12px; border-radius: 10px; overflow-x: auto; margin: 10px 0 0 0;
+    }
+
+    .step-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+    .step-pill {
+      border: 1px solid var(--border); background: var(--card-alt); color: var(--muted);
+      font-size: 12px; font-weight: 700; padding: 6px 2px; border-radius: 8px; cursor: pointer; text-align: center;
+    }
+    .step-pill.active { background: var(--primary); border-color: var(--primary); color: var(--primary-fg); }
+    .step-pill.done { background: var(--success-soft); border-color: transparent; color: var(--success); }
+    .step-label { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .step-op { font-size: 17px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; }
+    .step-explain { margin-top: 12px; font-size: 15px; line-height: 1.55; }
+    .cmd-details {
+      margin-top: 12px; background: var(--card-alt); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 12px; font-size: 13px;
+    }
+    .cmd-details summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    .choice-list { display: grid; gap: 8px; margin-top: 12px; }
+    .choice-btn {
+      width: 100%; text-align: left; border: 1px solid var(--border); background: var(--card-alt); color: var(--text);
+      font-size: 14px; font-weight: 600; padding: 12px 14px; border-radius: 12px; cursor: pointer; line-height: 1.45;
+    }
+    .choice-btn.correct { background: var(--success-soft); border-color: var(--success); }
+    .choice-btn.wrong { background: var(--warning-soft); border-color: var(--warning); }
+    .diff-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    @media (min-width: 460px) { .diff-grid { grid-template-columns: 1fr 1fr; } }
+    .diff-panel { background: var(--card-alt); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .diff-panel-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .feedback-box { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+    .feedback-ok { background: var(--success-soft); border: 1px solid var(--success); }
+    .feedback-warn { background: var(--warning-soft); border: 1px solid var(--warning); }
+    .step-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .grade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn {
+      border: 1px solid var(--border); background: var(--card); color: var(--text);
+      font-size: 15px; font-weight: 600; padding: 12px 10px; border-radius: 12px; cursor: pointer; text-align: center;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+    .btn-success { background: var(--success-soft); color: var(--success); border-color: transparent; }
+    .btn-warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
+
+    .list-item {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+    }
+    .list-q-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .list-q-title { font-size: 16px; font-weight: 700; margin-top: 6px; }
+    .hidden { display: none !important; }
+    .swipe-tip { text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← 目錄</a>
+        <h1 class="title">🐳 Docker 與日誌排查</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-badge" class="badge-progress">已記住 0 / 8</span>
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
+        <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-unit" class="tab-btn active" onclick="switchMode('unit')">📖 單元教學</button>
+      <button id="tab-flashcard" class="tab-btn" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
+      <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 排查總覽</button>
+    </div>
+
+    <div id="cat-bar" class="cat-bar hidden">
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (8)</button>
+      <button id="cat-core" class="cat-pill" onclick="setCategory('core')">核心概念 (3)</button>
+      <button id="cat-net" class="cat-pill" onclick="setCategory('net')">網路與除錯 (3)</button>
+      <button id="cat-sec" class="cat-pill" onclick="setCategory('sec')">安全與建置 (2)</button>
+      <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
+    </div>
+
+    <!-- VIEW 0: Docker Troubleshooting Unit 1 -->
+    <div id="view-unit">
+      <div class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span class="q-num">階段 3・Docker 單元 1</span>
+            <span class="q-cat">故障排查・5～8 分鐘</span>
+            <span id="dk-u1-status" class="status-tag hidden"></span>
+          </div>
+          <span id="dk-unit-badge" class="q-cat">學完 0 / 1 單元</span>
+        </div>
+        <div class="question-text" style="margin-bottom:6px;">容器顯示正在執行（Up），為什麼瀏覽器連不到 API？</div>
+        <div class="unit-goal">
+          <b>學完要會做什麼：</b>照「現象 → 假設 → 最小驗證 → 證據」順序，從 <code>docker ps</code> 與 <code>docker logs</code> 找出埠映射與監聽位址問題。
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="dk-step-pills" class="step-pills"></div>
+        <div id="dk-body"></div>
+        <div class="step-nav">
+          <button id="btn-dk-prev" class="btn" onclick="prevDkStep()">← 上一步</button>
+          <button id="btn-dk-next" class="btn btn-primary" onclick="nextDkStep()">下一步 →</button>
+        </div>
+        <details class="cmd-details" style="margin-top:12px;">
+          <summary>📝 階段實作核對（接上後端容器練習版時的排查交件）</summary>
+          <div style="margin-top:8px;line-height:1.55;">
+            • 本倉庫目前為靜態版，尚未內建 Dockerfile；待啟動後端容器練習版時，交出 <code>docker ps</code>（顯示 <code>0.0.0.0:8000-&gt;8000/tcp</code>）、<code>docker logs --tail 20</code>（顯示監聽 <code>0.0.0.0</code>）與宿主機 <code>curl -i http://localhost:8000/health</code> 的 <code>200 OK</code>。
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- VIEW 1: Flashcards -->
+    <div id="view-flashcard" class="hidden">
+      <div id="touch-card" class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span id="c-index" class="q-num">Q1 (1/8)</span>
+            <span id="c-cat" class="q-cat">核心概念</span>
+            <span id="c-status" class="status-tag hidden"></span>
+          </div>
+          <button id="btn-hint" class="icon-btn" onclick="toggleHint()">💡 提示</button>
+        </div>
+        <div id="c-question" class="question-text"></div>
+        <div id="c-hint" class="hint-box hidden"></div>
+        <div id="c-reveal" class="reveal-box" onclick="toggleAnswer()">
+          <div class="reveal-title">🔒 答案已隱藏（先在腦中回想）</div>
+          <div class="reveal-sub">點一下這裡打開答案</div>
+        </div>
+        <div id="c-answer" class="answer-box hidden">
+          <div class="answer-header">
+            <span>✓ 標準解析與記憶重點</span>
+            <span onclick="toggleAnswer()" style="color:var(--muted);font-weight:500;text-decoration:underline;cursor:pointer;">收起答案</span>
+          </div>
+          <div id="c-answer-points"></div>
+          <pre id="c-code" class="code-block hidden"></pre>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="btn" onclick="prevCard()">← 上一題</button>
+        <button id="btn-main-toggle" class="btn btn-primary" onclick="toggleAnswer()">👁 打開答案</button>
+        <button class="btn" onclick="nextCard()">下一題 →</button>
+      </div>
+      <div class="grade-grid">
+        <button class="btn btn-warning" onclick="markStatus('review')">↻ 待複習</button>
+        <button class="btn btn-success" onclick="markStatus('mastered')">✓ 已記住（下一題）</button>
+      </div>
+      <div class="swipe-tip">💡 支援手機左右滑動換題・進度自動儲存於瀏覽器</div>
+    </div>
+
+    <!-- VIEW 2: List -->
+    <div id="view-list" class="hidden">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+        <button class="icon-btn" onclick="toggleAllList(false)">🙈 全部隱藏</button>
+        <button class="icon-btn" onclick="toggleAllList(true)">👁 全部打開</button>
+      </div>
+      <div id="list-container"></div>
+    </div>
+
+    <!-- VIEW 3: Troubleshooting Summary -->
+    <div id="view-arch" class="hidden">
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">1. 容器連不到 API 三步排查順序</div>
+        <pre class="code-block">1. docker ps       -> 檢查 STATUS (Up/Exited) 與 PORTS (有無 0.0.0.0:8000->8000)
+2. docker logs     -> 檢查啟動崩潰錯誤，與服務是否監聽 0.0.0.0（而非 127.0.0.1）
+3. curl localhost  -> 從宿主機驗證真實 HTTP 回應，區分網路問題 vs 程式 500</pre>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">2. 建置與金鑰安全紅線</div>
+        <div class="answer-point">• <b>絕不把 <code>.env</code> 寫進 <code>COPY</code> 打包進 Image</b>：把 <code>.env</code> 列進 <code>.dockerignore</code>，啟動時再用 <code>--env-file</code> 或平台 Secrets 注入。</div>
+        <div class="answer-point">• <b>資料持久化用 Volume</b>：容器刪除時內部寫入的檔案會一起消失，資料庫與上傳檔須掛載 Volume。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CARDS = [
+      {
+        id: 1,
+        cat: "core",
+        catName: "核心概念",
+        q: "Docker 的 Dockerfile、Image（映像檔）與 Container（容器）三者關係是什麼？",
+        hint: "比喻成：食譜 → 冷凍料理包 → 正在加熱上桌的那盤菜。",
+        ans: [
+          "• <b>Dockerfile（藍圖）</b>：純文字建置腳本，寫明基底系統、要裝哪些套件與啟動指令。",
+          "• <b>Image（唯讀模板）</b>：執行 <code>docker build</code> 產生的不可變打包檔，可重複啟動出完全一致的環境。",
+          "• <b>Container（執行中的實例）</b>：執行 <code>docker run</code> 跑起來的獨立程序，刪掉重開就能回到乾淨狀態。"
+        ],
+        code: "Dockerfile --[docker build]--> Image --[docker run]--> Container"
+      },
+      {
+        id: 2,
+        cat: "core",
+        catName: "核心概念",
+        q: "為什麼把資料直接寫在容器內部資料夾很危險？正式資料該怎麼保存？",
+        hint: "容器被重建（recreate）或升級新版本時，裡面自己建的檔案還在嗎？",
+        ans: [
+          "• <b>容器檔案系統是暫時的（Ephemeral）</b>：一旦容器被刪除或更新 Image 重建，容器內部寫入的 SQLite 資料庫或日誌會全部消失。",
+          "• <b>正解：掛載 Volume（<code>-v</code>）</b>：把資料目錄映射到宿主機或具名 Volume，容器重開資料依然安全保留。"
+        ],
+        code: "docker run -v study_data:/app/data my-study-api"
+      },
+      {
+        id: 3,
+        cat: "core",
+        catName: "核心概念",
+        q: "Dockerfile 裡的 EXPOSE 8000 會自動把 Port 開放給宿主機瀏覽器嗎？跟 -p 8000:8000 差在哪？",
+        hint: "一個只是「文件宣告」，另一個才是真的打通宿主機與容器的網路埠。",
+        ans: [
+          "• <b><code>EXPOSE 8000</code> 不會自動開通對外連線</b>，它只是給人與工具看的中繼說明（文件用途）。",
+          "• <b><code>-p 宿主Port:容器Port</code>（如 <code>-p 8000:8000</code>）</b>才會真正把宿主機的 Port 轉發進容器。"
+        ],
+        code: "docker run -p 8000:8000 my-study-api   # 宿主機 8000 -> 容器內 8000"
+      },
+      {
+        id: 4,
+        cat: "net",
+        catName: "網路與除錯",
+        q: "已經加了 -p 8000:8000，容器也顯示 Up，為什麼宿主機仍連不到 API？最常見的監聽位址陷阱是什麼？",
+        hint: "容器裡的 127.0.0.1（localhost）指的是容器自己，還是你的 Mac？",
+        ans: [
+          "• <b>陷阱</b>：許多框架預設只監聽 <code>127.0.0.1</code>（容器自己的 loopback 介面），導致從宿主機透過埠映射轉進來的封包全部被拒。",
+          "• <b>解法</b>：讓容器內的 API 服務改為監聽 <b><code>0.0.0.0</code></b>（例如 <code>uvicorn app:app --host 0.0.0.0 --port 8000</code>）。"
+        ],
+        code: "✗ Listening on http://127.0.0.1:8000   # 宿主機連不到\n✓ Listening on http://0.0.0.0:8000     # 搭配 -p 8000:8000 可連通"
+      },
+      {
+        id: 5,
+        cat: "net",
+        catName: "網路與除錯",
+        q: "容器剛啟動就秒退（STATUS 顯示 Exited (1)），第一步該下什麼指令查原因？",
+        hint: "先看退出前的標準輸出／錯誤輸出日誌。",
+        ans: [
+          "• 先執行 <b><code>docker ps -a</code></b> 找到已退出容器的名稱／ID（<code>docker ps</code> 只看執行中的）。",
+          "• 再執行 <b><code>docker logs --tail 50 &lt;container&gt;</code></b> 查看崩潰前的錯誤訊息（常見如缺少環境變數、語法錯、Port 被佔用）。"
+        ],
+        code: "docker ps -a\ndocker logs --tail 50 study-api"
+      },
+      {
+        id: 6,
+        cat: "net",
+        catName: "網路與除錯",
+        q: "想進到正在執行的容器裡面確認檔案或環境變數，該用哪個指令？",
+        hint: "在執行中的容器裡啟動一個互動式 shell。",
+        ans: [
+          "• 使用 <b><code>docker exec -it &lt;container&gt; sh</code></b>（或 <code>bash</code>），可在不重啟容器的情況下檢查檔案路徑與網路連通性。",
+          "• 注意：不要在容器裡直接改檔當作永久修復，修完要回到程式碼與 Dockerfile 重新 build。"
+        ],
+        code: "docker exec -it study-api sh"
+      },
+      {
+        id: 7,
+        cat: "sec",
+        catName: "安全與建置",
+        q: "為什麼絕對不能把 .env 金鑰檔直接 COPY 進 Docker Image？正確做法是什麼？",
+        hint: "任何拿到這個 Image 的人都可以把裡面的層（layer）解出來看。",
+        ans: [
+          "• <b>風險</b>：把 <code>.env</code> 打包進 Image 後，密鑰會永久留在 Image Layer 裡；一旦推送到 Registry，任何人都能輕易提取密鑰。",
+          "• <b>正解</b>：把 <code>.env</code> 與 <code>.git</code> 加進 <b><code>.dockerignore</code></b>，在執行容器時才用 <code>--env-file .env</code> 或雲端平台 Secrets 動態注入。"
+        ],
+        code: "# .dockerignore\n.env\n.env.*\n.git\n\n# 啟動時動態注入\ndocker run --env-file .env -p 8000:8000 study-api"
+      },
+      {
+        id: 8,
+        cat: "sec",
+        catName: "安全與建置",
+        q: "寫 Dockerfile 時，為什麼常建議把 COPY package.json / requirements.txt 與安裝套件放在 COPY 全部程式碼之前？",
+        hint: "想一想 Docker 的分層快取（Layer Cache）機制。",
+        ans: [
+          "• <b>利用 Layer Cache 加速建置</b>：只要依賴清單沒變，Docker 就會直接重用「安裝套件」那一層快取，改一行程式重 build 只需幾秒鐘，不必每次重抓整個套件庫。"
+        ],
+        code: "COPY requirements.txt .\nRUN pip install -r requirements.txt  # 依賴沒變就命中快取！\nCOPY . ."
+      }
+    ];
+
+    const STORAGE_KEY = "agy_docker_flashcards_v1";
+    const UNIT_STORAGE_KEY = "agy_docker_units_v1";
+    const THEME_KEY = "agy_study_theme_v1";
+
+    let statusMap = {};
+    let unitMap = {};
+    let listOpenMap = {};
+    let currentMode = "unit";
+    let currentCat = "all";
+    let currentIdx = 0;
+    let showAns = false;
+    let showHint = false;
+    let dkStep = 0;
+    let dkPred = null;
+    let dkQuiz = null;
+
+    function readJsonMap(key) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      statusMap = readJsonMap(STORAGE_KEY);
+      unitMap = readJsonMap(UNIT_STORAGE_KEY);
+    } catch (_) {}
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function saveCardStatus(cardId, state) {
+      const latest = readJsonMap(STORAGE_KEY);
+      latest[cardId] = state;
+      statusMap = latest;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap)); } catch (_) {}
+    }
+
+    function saveUnitDone(unitId) {
+      const latest = readJsonMap(UNIT_STORAGE_KEY);
+      latest[unitId] = true;
+      unitMap = latest;
+      try { localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap)); } catch (_) {}
+    }
+
+    function getFiltered() {
+      if (currentCat === "all") return CARDS;
+      if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
+      return CARDS.filter(c => c.cat === currentCat);
+    }
+
+    function updateBadges() {
+      const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
+      const review = Object.values(statusMap).filter(v => v === "review").length;
+      const unitsDone = Object.values(unitMap).filter(Boolean).length;
+      document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
+      document.getElementById("cat-review").textContent = `待複習 (${review})`;
+      document.getElementById("dk-unit-badge").textContent = `學完 ${unitsDone} / 1 單元`;
+      const st = document.getElementById("dk-u1-status");
+      if (unitMap.unit1) {
+        st.textContent = "✓ 已完成";
+        st.className = "status-tag status-mastered";
+      } else {
+        st.className = "status-tag hidden";
+      }
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      ["unit", "flashcard", "list", "arch"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
+      });
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch" || mode === "unit");
+      if (mode === "unit") renderDkUnit();
+      if (mode === "flashcard") renderCard();
+      if (mode === "list") renderList();
+    }
+
+    function setCategory(cat) {
+      currentCat = cat;
+      currentIdx = 0;
+      showAns = false;
+      showHint = false;
+      ["all", "core", "net", "sec", "review"].forEach(c => {
+        document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
+      });
+      if (currentMode === "flashcard") renderCard();
+      if (currentMode === "list") renderList();
+    }
+
+    function reviewDkCards() {
+      switchMode("flashcard");
+      setCategory("all");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setDkStep(idx) { dkStep = Math.max(0, Math.min(4, idx)); renderDkUnit(); }
+    function prevDkStep() { if (dkStep > 0) setDkStep(dkStep - 1); }
+    function nextDkStep() { if (dkStep < 4) setDkStep(dkStep + 1); }
+    function pickDkPred(c) { dkPred = c; renderDkUnit(); }
+    function pickDkQuiz(c) {
+      dkQuiz = c;
+      if (c === 1) { saveUnitDone("unit1"); }
+      renderDkUnit();
+    }
+
+    function renderDkUnit() {
+      updateBadges();
+      const labels = ["1. 查狀態", "2. 補映射", "3. 改位址", "4. 卡點預測", "5. 驗收題"];
+      document.getElementById("dk-step-pills").innerHTML = labels.map((lb, i) => {
+        const cls = i === dkStep ? "step-pill active" : (i === 4 && unitMap.unit1) ? "step-pill done" : "step-pill";
+        return `<button class="${cls}" onclick="setDkStep(${i})">${lb}</button>`;
+      }).join("");
+
+      const body = document.getElementById("dk-body");
+      if (dkStep === 0) {
+        body.innerHTML = `
+          <div class="step-label">步驟 1 / 5・收集現象：先看 docker ps（示意輸出）</div>
+          <div class="step-op">容器明明顯示 <code>Up</code>，先檢查 <code>PORTS</code> 欄位有沒有對外映射</div>
+          <pre class="code-block"># 【示意輸出】
+NAMES      STATUS          PORTS
+study-api  Up 2 minutes    8000/tcp</pre>
+          <div class="step-explain"><code>PORTS</code> 只寫 <code>8000/tcp</code>（少了 <code>0.0.0.0:8000-&gt;</code>），代表啟動時忘了加 <code>-p</code>，宿主機根本連不到容器內部。</div>
+        `;
+      } else if (dkStep === 1) {
+        body.innerHTML = `
+          <div class="step-label">步驟 2 / 5・最小驗證：補上埠映射再查日誌（示意輸出）</div>
+          <div class="step-op">改用 <code>-p 8000:8000</code> 啟動，並用 <code>docker logs</code> 看監聽位址</div>
+          <pre class="code-block"># 【示意輸出】
+docker run -d --name study-api -p 8000:8000 study-api:dev
+docker logs study-api
+INFO: Uvicorn running on http://127.0.0.1:8000</pre>
+          <div class="step-explain">雖然埠已經映射出來，但日誌顯示服務只綁在容器自己的 <code>127.0.0.1</code>，宿主機依然連不進去！</div>
+        `;
+      } else if (dkStep === 2) {
+        body.innerHTML = `
+          <div class="step-label">步驟 3 / 5・修正監聽位址並驗證連通（示意輸出）</div>
+          <div class="step-op">讓容器內服務監聽 <code>0.0.0.0:8000</code>，再用 <code>curl</code> 驗證</div>
+          <pre class="code-block"># 【示意輸出】
+# CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+curl -i http://localhost:8000/health
+HTTP/1.1 200 OK
+{"status":"ok"}</pre>
+          <div class="step-explain"><code>0.0.0.0</code> 代表接受容器所有網路介面轉進來的流量，搭配 <code>-p 8000:8000</code> 宿主機瀏覽器就能順利連通。</div>
+        `;
+      } else if (dkStep === 3) {
+        const predHtml = dkPred !== null ? `
+          <div class="feedback-box ${dkPred === 0 ? "feedback-ok" : "feedback-warn"}">
+            <b>${dkPred === 0 ? "✓ 判斷精準！" : "↻ 這是 Docker 新手最常卡半小時的雷！"}</b>
+            容器內有自己獨立的網路命名空間，<code>127.0.0.1</code> 只收容器內部的流量；對外提供服務必須監聽 <code>0.0.0.0</code>。
+          </div>
+          <div class="diff-grid">
+            <div class="diff-panel">
+              <div class="diff-panel-title">綁 127.0.0.1（連不到）</div>
+              <pre class="code-block" style="margin-top:0;">只聽容器內部 loopback\n宿主機轉發封包被拒</pre>
+            </div>
+            <div class="diff-panel">
+              <div class="diff-panel-title">綁 0.0.0.0（正常連通）</div>
+              <pre class="code-block" style="margin-top:0;">接受 Docker 虛擬網卡封包\n搭配 -p 8000:8000 即可連通</pre>
+            </div>
+          </div>
+        ` : "";
+        body.innerHTML = `
+          <div class="step-label">步驟 4 / 5・常見卡點預測</div>
+          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b><code>docker ps</code> 已正確顯示 <code>0.0.0.0:8000-&gt;8000/tcp</code>，但宿主機 <code>curl localhost:8000</code> 仍被重置連線，且 <code>docker logs</code> 寫著 <code>Listening on 127.0.0.1:8000</code>。</div>
+          <div class="step-op">哪一條證據直接指向真正的根因？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${dkPred === 0 ? "correct" : ""}" onclick="pickDkPred(0)">A. 服務綁在容器內的 127.0.0.1，必須改為監聽 0.0.0.0</button>
+            <button class="choice-btn ${dkPred === 1 ? "wrong" : ""}" onclick="pickDkPred(1)">B. Dockerfile 少了 EXPOSE 8000，補上就會自動開通</button>
+          </div>
+          ${predHtml}
+        `;
+      } else {
+        const showPassed = dkQuiz === 1 || (dkQuiz === null && unitMap.unit1);
+        const fb = showPassed ? `
+          <div class="feedback-box feedback-ok">
+            <b>✓ ${dkQuiz === 1 ? "答對了！已完成 Docker 故障排查單元" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
+            證據 1（<code>PORTS</code> 僅有 <code>8000/tcp</code>）代表少了 <code>-p 8000:8000</code>；證據 2（日誌寫 <code>127.0.0.1:8000</code>）代表容器內沒綁 <code>0.0.0.0</code>。兩者都修好才能連通！
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary" style="width:100%;" onclick="reviewDkCards()">👉 複習 Docker 與日誌排查題卡（8 題）</button>
+            </div>
+          </div>
+        ` : dkQuiz !== null ? `
+          <div class="feedback-box feedback-warn">
+            <b>同時看兩份證據：</b><code>docker ps</code> 的 <code>PORTS</code> 與 <code>docker logs</code> 的監聽位址各有一個破口，缺一不可！再選一次。
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          <div class="step-label">步驟 5 / 5・單元驗收（AI 查證邏輯：依證據下判斷）</div>
+          <div class="step-op">宿主機連不到容器 API，查出以下兩段輸出，哪兩個修正缺一不可？</div>
+          <pre class="code-block">[docker ps]   study-api   Up 1m   8000/tcp
+[docker logs] Listening on http://127.0.0.1:8000</pre>
+          <div class="choice-list">
+            <button class="choice-btn ${dkQuiz === 0 ? "wrong" : ""}" onclick="pickDkQuiz(0)">A. 只在 Dockerfile 加 EXPOSE 8000，不需要動啟動參數或監聽位址</button>
+            <button class="choice-btn ${dkQuiz === 1 ? "correct" : ""}" onclick="pickDkQuiz(1)">B. 啟動時加上 -p 8000:8000 埠映射，並讓容器內服務改為監聽 0.0.0.0:8000</button>
+            <button class="choice-btn ${dkQuiz === 2 ? "wrong" : ""}" onclick="pickDkQuiz(2)">C. 重開容器十次，直到 127.0.0.1 自動對外開放</button>
+          </div>
+          ${fb}
+        `;
+      }
+
+      const prevBtn = document.getElementById("btn-dk-prev");
+      const nextBtn = document.getElementById("btn-dk-next");
+      prevBtn.disabled = dkStep === 0;
+      prevBtn.style.opacity = dkStep === 0 ? "0.45" : "1";
+      prevBtn.style.gridColumn = dkStep === 4 ? "1 / -1" : "";
+      nextBtn.classList.toggle("hidden", dkStep === 4);
+    }
+
+    function renderCard() {
+      const list = getFiltered();
+      updateBadges();
+      if (!list.length) {
+        document.getElementById("c-index").textContent = "0 / 0";
+        document.getElementById("c-cat").textContent = "無題目";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (8)」繼續練習。";
+        document.getElementById("c-hint").classList.add("hidden");
+        document.getElementById("c-reveal").classList.add("hidden");
+        document.getElementById("c-answer").classList.add("hidden");
+        document.getElementById("c-status").classList.add("hidden");
+        return;
+      }
+      if (currentIdx >= list.length) currentIdx = 0;
+      if (currentIdx < 0) currentIdx = list.length - 1;
+      const card = list[currentIdx];
+      document.getElementById("c-index").textContent = `Q${card.id} (${currentIdx + 1}/${list.length})`;
+      document.getElementById("c-cat").textContent = card.catName;
+      document.getElementById("c-question").textContent = card.q;
+      const stEl = document.getElementById("c-status");
+      const st = statusMap[card.id];
+      if (st === "mastered") { stEl.textContent = "✓ 已記住"; stEl.className = "status-tag status-mastered"; }
+      else if (st === "review") { stEl.textContent = "↻ 待複習"; stEl.className = "status-tag status-review"; }
+      else { stEl.className = "status-tag hidden"; }
+      const hintEl = document.getElementById("c-hint");
+      hintEl.textContent = `💡 提示：${card.hint}`;
+      hintEl.classList.toggle("hidden", !showHint);
+      document.getElementById("c-answer-points").innerHTML = card.ans.map(line => `<div class="answer-point">${line}</div>`).join("");
+      const codeEl = document.getElementById("c-code");
+      if (card.code) { codeEl.textContent = card.code; codeEl.classList.remove("hidden"); }
+      else { codeEl.classList.add("hidden"); }
+      document.getElementById("c-reveal").classList.toggle("hidden", showAns);
+      document.getElementById("c-answer").classList.toggle("hidden", !showAns);
+      document.getElementById("btn-main-toggle").textContent = showAns ? "🙈 隱藏答案" : "👁 打開答案";
+    }
+
+    function toggleAnswer() { if (!getFiltered().length) return; showAns = !showAns; renderCard(); }
+    function toggleHint() { if (!getFiltered().length) return; showHint = !showHint; renderCard(); }
+    function nextCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx + 1) % l.length; showAns = false; showHint = false; renderCard(); }
+    function prevCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx - 1 + l.length) % l.length; showAns = false; showHint = false; renderCard(); }
+    function markStatus(state) {
+      const l = getFiltered(); if (!l.length) return;
+      saveCardStatus(l[currentIdx].id, state); updateBadges();
+      if (state === "mastered") nextCard(); else renderCard();
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const box = document.getElementById("list-container");
+      updateBadges();
+      if (!list.length) { box.innerHTML = `<div class="card">目前此分類沒有題目。</div>`; return; }
+      box.innerHTML = list.map(card => {
+        const open = !!listOpenMap[card.id];
+        const st = statusMap[card.id];
+        const stBadge = st === "mastered" ? `<span class="status-tag status-mastered">✓ 已記住</span>`
+          : st === "review" ? `<span class="status-tag status-review">↻ 待複習</span>` : "";
+        return `
+          <div class="list-item">
+            <div class="list-q-row" onclick="toggleListOne(${card.id})">
+              <div>
+                <div class="meta-left">
+                  <span class="q-num">Q${card.id}</span>
+                  <span class="q-cat">${card.catName}</span>
+                  ${stBadge}
+                </div>
+                <div class="list-q-title">${escapeHtml(card.q)}</div>
+              </div>
+              <button class="icon-btn" style="flex-shrink:0;white-space:nowrap;">${open ? "🙈 收起" : "👁 答案"}</button>
+            </div>
+            ${open ? `
+              <div class="answer-box">
+                <div class="hint-box">💡 提示：${escapeHtml(card.hint)}</div>
+                ${card.ans.map(line => `<div class="answer-point">${line}</div>`).join("")}
+                ${card.code ? `<pre class="code-block">${escapeHtml(card.code)}</pre>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+    function toggleListOne(id) { listOpenMap[id] = !listOpenMap[id]; renderList(); }
+    function toggleAllList(openState) { CARDS.forEach(c => { listOpenMap[c.id] = openState; }); renderList(); }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const cur = root.getAttribute("data-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const next = (cur ? cur === "dark" : prefersDark) ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+    }
+
+    function resetAll() {
+      if (!confirm("確定要重置「Docker 與日誌排查」的單元與題卡進度嗎？")) return;
+      statusMap = {}; unitMap = {}; listOpenMap = {};
+      showAns = false; showHint = false; currentIdx = 0; dkStep = 0; dkPred = null; dkQuiz = null;
+      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UNIT_STORAGE_KEY); } catch (_) {}
+      setCategory("all");
+      if (currentMode === "unit") renderDkUnit();
+    }
+
+    let touchStartX = 0, touchStartY = 0;
+    const touchCard = document.getElementById("touch-card");
+    touchCard.addEventListener("touchstart", e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: true });
+    touchCard.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) nextCard(); else prevCard(); }
+    }, { passive: true });
+
+    renderDkUnit();
+    renderCard();
+  </script>
+</body>
+</html>

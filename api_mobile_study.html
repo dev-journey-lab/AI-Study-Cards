@@ -153,8 +153,8 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
       background: var(--card-alt);
       padding: 4px;
       border-radius: 12px;
@@ -165,12 +165,13 @@
       border: none;
       background: transparent;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      padding: 9px 4px;
+      padding: 9px 2px;
       border-radius: 9px;
       cursor: pointer;
       transition: all 0.15s ease;
+      white-space: nowrap;
     }
 
     .tab-btn.active {
@@ -429,6 +430,41 @@
       color: var(--muted);
       margin-top: 10px;
     }
+
+    .unit-goal {
+      background: var(--card-alt); border-left: 3px solid var(--primary);
+      padding: 10px 12px; border-radius: 8px; font-size: 14px; margin: 10px 0 0 0;
+    }
+    .step-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+    .step-pill {
+      border: 1px solid var(--border); background: var(--card-alt); color: var(--muted);
+      font-size: 12px; font-weight: 700; padding: 6px 2px; border-radius: 8px; cursor: pointer; text-align: center;
+    }
+    .step-pill.active { background: var(--primary); border-color: var(--primary); color: var(--primary-fg); }
+    .step-pill.done { background: var(--success-soft); border-color: transparent; color: var(--success); }
+    .step-label { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .step-op { font-size: 17px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; }
+    .step-explain { margin-top: 12px; font-size: 15px; line-height: 1.55; }
+    .cmd-details {
+      margin-top: 12px; background: var(--card-alt); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 12px; font-size: 13px;
+    }
+    .cmd-details summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    .choice-list { display: grid; gap: 8px; margin-top: 12px; }
+    .choice-btn {
+      width: 100%; text-align: left; border: 1px solid var(--border); background: var(--card-alt); color: var(--text);
+      font-size: 14px; font-weight: 600; padding: 12px 14px; border-radius: 12px; cursor: pointer; line-height: 1.45;
+    }
+    .choice-btn.correct { background: var(--success-soft); border-color: var(--success); }
+    .choice-btn.wrong { background: var(--warning-soft); border-color: var(--warning); }
+    .diff-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    @media (min-width: 460px) { .diff-grid { grid-template-columns: 1fr 1fr; } }
+    .diff-panel { background: var(--card-alt); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .diff-panel-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .feedback-box { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+    .feedback-ok { background: var(--success-soft); border: 1px solid var(--success); }
+    .feedback-warn { background: var(--warning-soft); border: 1px solid var(--warning); }
+    .step-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
   </style>
 </head>
 <body>
@@ -446,12 +482,13 @@
     </div>
 
     <div class="tabs">
-      <button id="tab-flashcard" class="tab-btn active" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-unit" class="tab-btn active" onclick="switchMode('unit')">📖 單元教學</button>
+      <button id="tab-flashcard" class="tab-btn" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
       <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
       <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 流程總覽</button>
     </div>
 
-    <div id="cat-bar" class="cat-bar">
+    <div id="cat-bar" class="cat-bar hidden">
       <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (10)</button>
       <button id="cat-http" class="cat-pill" onclick="setCategory('http')">請求與回應 (4)</button>
       <button id="cat-rest" class="cat-pill" onclick="setCategory('rest')">REST 與狀態碼 (3)</button>
@@ -459,7 +496,41 @@
       <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
     </div>
 
-    <div id="view-flashcard">
+    <!-- VIEW 0: Stage 2 API Unit 1 -->
+    <div id="view-unit">
+      <div class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span class="q-num">階段 2・API 單元 1</span>
+            <span class="q-cat">實戰手把手・5～8 分鐘</span>
+            <span id="api-u1-status" class="status-tag hidden"></span>
+          </div>
+          <span id="api-unit-badge" class="q-cat">學完 0 / 1 單元</span>
+        </div>
+        <div class="question-text" style="margin-bottom:6px;">用 fetch 讀題庫並正確處理 HTTP 錯誤</div>
+        <div class="unit-goal">
+          <b>學完要會做什麼：</b>能寫出檢查 <code>res.ok</code> 的 <code>fetch</code> 流程，並在 DevTools Network 分辨 CORS、<code>401</code> 與 <code>403</code>。
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="api-step-pills" class="step-pills"></div>
+        <div id="api-body"></div>
+        <div class="step-nav">
+          <button id="btn-api-prev" class="btn" onclick="prevApiStep()">← 上一步</button>
+          <button id="btn-api-next" class="btn btn-primary" onclick="nextApiStep()">下一步 →</button>
+        </div>
+        <details class="cmd-details" style="margin-top:12px;">
+          <summary>📝 階段實作核對（接上題庫 API 時的驗收清單）</summary>
+          <div style="margin-top:8px;line-height:1.55;">
+            • 用 <code>fetch</code> 呼叫不存在的路徑，確認 <code>if (!res.ok)</code> 確實觸發錯誤分支而不是把 404 當成功。<br />
+            • 在瀏覽器 DevTools Network 截圖或記錄一次 <code>200</code> 與一次 <code>401</code>／<code>404</code> 的 Status 與 Headers。
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div id="view-flashcard" class="hidden">
       <div id="touch-card" class="card">
         <div class="card-meta">
           <div class="meta-left">
@@ -682,20 +753,34 @@
     ];
 
     const STORAGE_KEY = "agy_api_flashcards_v1";
+    const UNIT_STORAGE_KEY = "agy_api_units_v1";
     const THEME_KEY = "agy_study_theme_v1";
     let statusMap = {};
+    let unitMap = {};
     let listOpenMap = {};
-    let currentMode = "flashcard";
+    let currentMode = "unit";
     let currentCat = "all";
     let currentIdx = 0;
     let showAns = false;
     let showHint = false;
+    let apiStep = 0;
+    let apiPred = null;
+    let apiQuiz = null;
+
+    function readJsonMap(key) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
 
     try {
       const savedTheme = localStorage.getItem(THEME_KEY);
       if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) statusMap = JSON.parse(saved) || {};
+      statusMap = readJsonMap(STORAGE_KEY);
+      unitMap = readJsonMap(UNIT_STORAGE_KEY);
     } catch (_) {}
 
     function escapeHtml(str) {
@@ -705,10 +790,18 @@
         .replace(/>/g, "&gt;");
     }
 
-    function saveProgress() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
-      } catch (_) {}
+    function saveCardStatus(cardId, state) {
+      const latest = readJsonMap(STORAGE_KEY);
+      latest[cardId] = state;
+      statusMap = latest;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap)); } catch (_) {}
+    }
+
+    function saveUnitDone(unitId) {
+      const latest = readJsonMap(UNIT_STORAGE_KEY);
+      latest[unitId] = true;
+      unitMap = latest;
+      try { localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap)); } catch (_) {}
     }
 
     function getFiltered() {
@@ -720,19 +813,147 @@
     function updateBadges() {
       const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
       const review = Object.values(statusMap).filter(v => v === "review").length;
+      const unitsDone = Object.values(unitMap).filter(Boolean).length;
       document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
       document.getElementById("cat-review").textContent = `待複習 (${review})`;
+      const ub = document.getElementById("api-unit-badge");
+      if (ub) ub.textContent = `學完 ${unitsDone} / 1 單元`;
+      const st = document.getElementById("api-u1-status");
+      if (st) {
+        if (unitMap.unit1) { st.textContent = "✓ 已完成"; st.className = "status-tag status-mastered"; }
+        else { st.className = "status-tag hidden"; }
+      }
     }
 
     function switchMode(mode) {
       currentMode = mode;
-      ["flashcard", "list", "arch"].forEach(m => {
+      ["unit", "flashcard", "list", "arch"].forEach(m => {
         document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
         document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
       });
-      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch");
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch" || mode === "unit");
+      if (mode === "unit") renderApiUnit();
       if (mode === "flashcard") renderCard();
       if (mode === "list") renderList();
+    }
+
+    function reviewApiCards() {
+      switchMode("flashcard");
+      setCategory("all");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setApiStep(idx) { apiStep = Math.max(0, Math.min(4, idx)); renderApiUnit(); }
+    function prevApiStep() { if (apiStep > 0) setApiStep(apiStep - 1); }
+    function nextApiStep() { if (apiStep < 4) setApiStep(apiStep + 1); }
+    function pickApiPred(c) { apiPred = c; renderApiUnit(); }
+    function pickApiQuiz(c) {
+      apiQuiz = c;
+      if (c === 1) { saveUnitDone("unit1"); }
+      renderApiUnit();
+    }
+
+    function renderApiUnit() {
+      updateBadges();
+      const labels = ["1. 送請求", "2. 驗 res.ok", "3. 判狀態碼", "4. 卡點預測", "5. 驗收題"];
+      document.getElementById("api-step-pills").innerHTML = labels.map((lb, i) => {
+        const cls = i === apiStep ? "step-pill active" : (i === 4 && unitMap.unit1) ? "step-pill done" : "step-pill";
+        return `<button class="${cls}" onclick="setApiStep(${i})">${lb}</button>`;
+      }).join("");
+
+      const body = document.getElementById("api-body");
+      if (apiStep === 0) {
+        body.innerHTML = `
+          <div class="step-label">步驟 1 / 5・組裝並送出 GET 請求（示意範例）</div>
+          <div class="step-op">用 <code>fetch()</code> 帶上 Query String 讀取指定主題題庫</div>
+          <pre class="code-block">const res = await fetch("/api/cards?topic=git", {
+  headers: { Accept: "application/json" }
+});</pre>
+          <div class="step-explain">第一個 <code>await</code> 等的是伺服器回傳 HTTP 標頭（Response 物件），還沒有解析 JSON 內容。</div>
+        `;
+      } else if (apiStep === 1) {
+        body.innerHTML = `
+          <div class="step-label">步驟 2 / 5・先檢查 res.ok 再解析 JSON</div>
+          <div class="step-op">確認 <code>res.ok</code> 為真，否則主動拋錯交給錯誤處理</div>
+          <pre class="code-block">if (!res.ok) {
+  throw new Error(\`HTTP \${res.status}\`);
+}
+const cards = await res.json();</pre>
+          <div class="step-explain"><code>res.ok</code> 代表狀態碼落在 <code>200～299</code>；先攔截非 2xx 再執行 <code>res.json()</code>，才不會把錯誤頁 HTML 當成 JSON 解析。</div>
+        `;
+      } else if (apiStep === 2) {
+        body.innerHTML = `
+          <div class="step-label">步驟 3 / 5・從 Network 判讀 401 vs 403（示意輸出）</div>
+          <div class="step-op">對照 RFC 9110 快速判斷是「沒憑證」還是「被拒絕處理」</div>
+          <pre class="code-block"># 【示意輸出】
+GET /api/me    -> 401 Unauthorized (缺有效身分憑證 -> 導登入 / refresh)
+DELETE /cards  -> 403 Forbidden    (伺服器理解請求但拒絕處理)</pre>
+          <div class="step-explain">收到 <code>401</code> 先查有沒有帶有效 Token；收到 <code>403</code> 單純重登通常沒用，要查帳號權限或伺服器政策。</div>
+        `;
+      } else if (apiStep === 3) {
+        const predHtml = apiPred !== null ? `
+          <div class="feedback-box ${apiPred === 0 ? "feedback-ok" : "feedback-warn"}">
+            <b>${apiPred === 0 ? "✓ 預測正確！" : "↻ 這是最常見的 fetch 陷阱！"}</b>
+            <code>fetch()</code> 只有在「斷網／DNS 失敗／被中止」時才會 reject；收到 <code>404</code> 或 <code>500</code> 仍算「成功收到回應」，<b>不會進 <code>catch</code></b>，所以一定要寫 <code>if (!res.ok)</code>！
+          </div>
+          <div class="diff-grid">
+            <div class="diff-panel">
+              <div class="diff-panel-title">沒寫 if (!res.ok)</div>
+              <pre class="code-block" style="margin-top:0;">收到 404 不進 catch\n繼續執行 res.json() 才莫名報錯</pre>
+            </div>
+            <div class="diff-panel">
+              <div class="diff-panel-title">補上 if (!res.ok)</div>
+              <pre class="code-block" style="margin-top:0;">立刻拋出 HTTP 404\n統一由 catch 顯示錯誤畫面</pre>
+            </div>
+          </div>
+        ` : "";
+        body.innerHTML = `
+          <div class="step-label">步驟 4 / 5・常見卡點預測（fetch 404 陷阱）</div>
+          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>你寫了 <code>try { const res = await fetch("/api/cards/999"); } catch (e) { showError(); }</code>，但忘了寫 <code>if (!res.ok)</code>。</div>
+          <div class="step-op">當伺服器回傳 <code>404 Not Found</code> 時，會自動跳進 <code>catch</code> 執行 <code>showError()</code> 嗎？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${apiPred === 0 ? "correct" : ""}" onclick="pickApiPred(0)">A. 不會！fetch 收到 404 不會 reject，必須手動檢查 res.ok</button>
+            <button class="choice-btn ${apiPred === 1 ? "wrong" : ""}" onclick="pickApiPred(1)">B. 會！只要狀態碼是 4xx 或 5xx，fetch 就會自動丟出例外</button>
+          </div>
+          ${predHtml}
+        `;
+      } else {
+        const showPassed = apiQuiz === 1 || (apiQuiz === null && unitMap.unit1);
+        const fb = showPassed ? `
+          <div class="feedback-box feedback-ok">
+            <b>✓ ${apiQuiz === 1 ? "答對了！已完成 API 單元 1" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
+            <code>OPTIONS -> 204</code> 證明 CORS 預檢已經通過；真正失敗的是後續 <code>GET</code> 回 <code>401</code> 且請求少了 <code>Authorization</code> 標頭，直接補上有效憑證（或導向登入）即可！
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary" style="width:100%;" onclick="reviewApiCards()">👉 複習 API 流程題卡（10 題）</button>
+            </div>
+          </div>
+        ` : apiQuiz !== null ? `
+          <div class="feedback-box feedback-warn">
+            <b>看 Network 的兩條證據：</b><code>OPTIONS</code> 已經 <code>204</code> 代表 CORS 沒擋，問題出在下一行 <code>GET -> 401</code> 與少了 <code>Authorization</code>！再選一次。
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          <div class="step-label">步驟 5 / 5・單元驗收</div>
+          <div class="step-op">在 DevTools Network 看到以下紀錄，最直接的排查方向是什麼？</div>
+          <pre class="code-block">OPTIONS /api/cards  -> 204 No Content
+GET     /api/cards  -> 401 Unauthorized
+Request Headers: (未見 Authorization 標頭)</pre>
+          <div class="choice-list">
+            <button class="choice-btn ${apiQuiz === 0 ? "wrong" : ""}" onclick="pickApiQuiz(0)">A. 這是 CORS 被瀏覽器擋住，要叫後端重改 OPTIONS 標頭</button>
+            <button class="choice-btn ${apiQuiz === 1 ? "correct" : ""}" onclick="pickApiQuiz(1)">B. CORS 預檢已過，問題是缺少有效身分憑證：檢查前端為何沒帶 Authorization 或 Token 是否已過期</button>
+            <button class="choice-btn ${apiQuiz === 2 ? "wrong" : ""}" onclick="pickApiQuiz(2)">C. 這是後端資料庫崩潰（5xx），直接請後端重開機</button>
+          </div>
+          ${fb}
+        `;
+      }
+
+      const prevBtn = document.getElementById("btn-api-prev");
+      const nextBtn = document.getElementById("btn-api-next");
+      prevBtn.disabled = apiStep === 0;
+      prevBtn.style.opacity = apiStep === 0 ? "0.45" : "1";
+      prevBtn.style.gridColumn = apiStep === 4 ? "1 / -1" : "";
+      nextBtn.classList.toggle("hidden", apiStep === 4);
     }
 
     function setCategory(cat) {
@@ -837,8 +1058,7 @@
       const list = getFiltered();
       if (list.length === 0) return;
       const card = list[currentIdx];
-      statusMap[card.id] = state;
-      saveProgress();
+      saveCardStatus(card.id, state);
       updateBadges();
       if (state === "mastered") {
         nextCard();
@@ -912,14 +1132,22 @@
     }
 
     function resetAll() {
-      if (!confirm("確定要重置「API 流程」的學習進度嗎？")) return;
+      if (!confirm("確定要重置「API 流程」的單元與題卡進度嗎？")) return;
       statusMap = {};
+      unitMap = {};
       listOpenMap = {};
       showAns = false;
       showHint = false;
       currentIdx = 0;
-      saveProgress();
+      apiStep = 0;
+      apiPred = null;
+      apiQuiz = null;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(UNIT_STORAGE_KEY);
+      } catch (_) {}
       setCategory("all");
+      if (currentMode === "unit") renderApiUnit();
     }
 
     let touchStartX = 0;
@@ -949,6 +1177,7 @@
       }
     });
 
+    renderApiUnit();
     renderCard();
   </script>
 </body>
