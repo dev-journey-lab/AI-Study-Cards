@@ -418,25 +418,25 @@
         id: 7,
         cat: "obs",
         catName: "維運與追蹤",
-        q: "一個請求經過 Gateway → 服務 A → 服務 B 才報錯，要怎麼把散落在不同日誌的紀錄串起來？",
-        hint: "給這筆請求發一個從頭帶到尾的「追蹤編號」。",
+        q: "一個請求經過 Gateway → 下游服務才報錯，要怎麼把散落在不同日誌的紀錄串起來？",
+        hint: "應用層常用 X-Request-Id 串日誌，跨服務追蹤標準則有 W3C traceparent 的 Trace ID。",
         ans: [
-          "• 在入口（Gateway）為每個請求產生唯一的 <b><code>X-Request-Id</code>（Correlation ID / Trace ID）</b>，透過 HTTP Header 一路傳給下游服務，且每個服務寫日誌都印出這個 ID。",
-          "• 進階搭配 OpenTelemetry 分散式追蹤（Distributed Tracing），就能一眼看出整條鏈路卡在哪一段耗時最久。"
+          "• <b>應用層 <code>X-Request-Id</code></b>：在 Gateway 為這筆請求產生唯一編號並透過 Header 傳給下游，兩邊寫日誌都印出同一個 <code>request_id</code> 即可串起同一筆請求。",
+          "• <b>標準分散式追蹤（W3C Trace Context）</b>：搭配 OpenTelemetry 傳遞標準 <b><code>traceparent</code></b> 標頭（內含 <b>Trace ID</b> 與 Span ID），不只串日誌，還能畫出跨服務每段耗時。"
         ],
-        code: "[Gateway]  trace_id=9a8b7c GET /cards -> 200 (12ms)\n[Progress] trace_id=9a8b7c GET /progress -> 503 (2001ms timeout)"
+        code: "[Gateway]      request_id=req-9a8b7c POST /api/progress -> 503 (2004ms, gateway fallback)\n[progress-svc] request_id=req-9a8b7c POST /api/progress -> DB pool busy (503)"
       },
       {
         id: 8,
         cat: "obs",
         catName: "維運與追蹤",
-        q: "拆成多個服務後常聽到「最終一致性（Eventual Consistency）」，用白話說是什麼意思？",
-        hint: "按下「已記住」後，排行榜統計晚 1～2 秒才更新算不算壞掉？",
+        q: "拆成多個服務後常聽到「最終一致性（Eventual Consistency）」，它保證什麼、又不保證什麼？",
+        hint: "最終一致性談的是「停止新更新後會收斂」，固定幾秒內追上則是額外訂的延遲目標。",
         ans: [
-          "• <b>白話定義</b>：不要求多個服務在同一毫秒內透過分散式鎖同時寫完，而是允許次要資料（如學習統計、搜尋索引）透過非同步事件在幾百毫秒或幾秒內追上，最終達到一致。",
-          "• <b>好處</b>：大幅提升系統可用性與吞吐量，避免一個次要服務慢了就卡住核心操作。"
+          "• <b>核心定義</b>：不要求多個服務在同一毫秒透過分散式鎖同時寫完；它保證的是「<b>停止新更新後，所有讀取結果最終會收斂為一致</b>」。",
+          "• <b>與延遲目標的差別</b>：最終一致性本身不保證固定時間；實務上常見「例如幾百毫秒或 1～2 秒內更新統計」，那是該系統另外訂的延遲目標（SLO）。"
         ],
-        code: "存進度成功 -> 發事件 progress.updated -> 統計服務非同步更新總覽（最終一致）"
+        code: "存進度成功 -> 發事件 progress.updated -> 統計服務非同步追上（停止新更新後最終一致）"
       }
     ];
 
@@ -582,11 +582,11 @@
       } else if (msStep === 2) {
         body.innerHTML = `
           <div class="step-label">步驟 3 / 5・比較故障影響（示意情境）</div>
-          <div class="step-op">當 <code>progress-svc</code> 資料庫爆滿回 <code>503</code>，使用者還能讀題庫嗎？</div>
+          <div class="step-op">當 <code>progress-svc</code> 寫入過載回 <code>503</code>（或閘道 2 秒逾時後轉為 <code>503</code> 降級），使用者還能讀題庫嗎？</div>
           <pre class="code-block"># 【示意回應】
 GET  /api/cards    -> 200 OK（核心題庫照常顯示）
-POST /api/progress -> 503（2 秒逾時後降級：提示稍後再同步）</pre>
-          <div class="step-explain">這才是拆服務的真正收益：次要寫入故障時，核心閱讀體驗不受影響。</div>
+POST /api/progress -> 503 Service Unavailable（進度服務過載或閘道逾時降級，提示稍後重試）</pre>
+          <div class="step-explain">這才是拆服務的真正收益：進度寫入故障時，核心閱讀體驗不受影響。</div>
         `;
       } else if (msStep === 3) {
         const predHtml = msPred !== null ? `
@@ -620,26 +620,26 @@ POST /api/progress -> 503（2 秒逾時後降級：提示稍後再同步）</pre
         const fb = showPassed ? `
           <div class="feedback-box feedback-ok">
             <b>✓ ${msQuiz === 0 ? "答對了！已完成階段 4 微服務單元" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
-            如果頁面死等 <code>progress-svc</code> 30 秒才畫出題庫，拆服務就失去了故障隔離的意義！把兩個請求解耦、替進度服務設短逾時（如 2 秒）並優雅降級，才能保住核心讀題庫體驗。
+            如果切下一題時前端死等 <code>POST /api/progress</code> 寫入逾時 30 秒才顯示題庫，拆服務就失去了故障隔離的意義！把 <code>GET /api/cards</code> 與 <code>POST /api/progress</code> 解耦，替進度寫入設 2 秒逾時（由閘道或前端轉成降級提示稍後重試），就能保住核心讀題庫體驗。
             <div style="margin-top:10px;">
               <button class="btn btn-primary" style="width:100%;" onclick="reviewMsCards()">👉 複習服務邊界與微服務題卡（8 題）</button>
             </div>
           </div>
         ` : msQuiz !== null ? `
           <div class="feedback-box feedback-warn">
-            <b>想想看「故障隔離」的條件：</b>現在題庫服務明明是 <code>200 OK</code>，卻被卡住 30 秒的進度服務拖死。怎麼讓讀題庫「不用苦等進度服務」？再選一次！
+            <b>想想看「故障隔離」的條件：</b>現在 <code>GET /api/cards</code> 明明是 <code>200 OK</code>，卻被卡住 30 秒的 <code>POST /api/progress</code> 寫入拖死。怎麼讓讀題庫不用苦等進度寫入？再選一次！
           </div>
         ` : "";
 
         body.innerHTML = `
           <div class="step-label">步驟 5 / 5・單元驗收</div>
-          <div class="step-op">拆成兩個服務後遇到以下狀態，卻因為頁面要等 <code>progress-svc</code> 逾時 30 秒才渲染題庫，導致使用者覺得全站當機。怎麼改才真正發揮故障隔離？</div>
-          <pre class="code-block">cards-svc    -> 200 OK (15ms)
-progress-svc -> 掛起 30s 後才回 503</pre>
+          <div class="step-op">拆成兩個服務後遇到以下狀態，卻因為頁面要等 <code>POST /api/progress</code> 寫入逾時 30 秒才顯示題庫，導致使用者覺得全站當機。怎麼改才真正發揮故障隔離？</div>
+          <pre class="code-block">GET  /api/cards    -> 200 OK (15ms)
+POST /api/progress -> 進度服務過載掛起 30s（最後閘道才回 503 降級）</pre>
           <div class="choice-list">
-            <button class="choice-btn ${msQuiz === 0 ? "correct" : ""}" onclick="pickMsQuiz(0)">A. 讀題庫與讀進度解耦，替 progress-svc 設短逾時（如 2 秒）＋優雅降級，題庫先正常顯示</button>
-            <button class="choice-btn ${msQuiz === 1 ? "wrong" : ""}" onclick="pickMsQuiz(1)">B. 把 progress-svc 的逾時延長到 120 秒，讓使用者慢慢等它恢復</button>
-            <button class="choice-btn ${msQuiz === 2 ? "wrong" : ""}" onclick="pickMsQuiz(2)">C. 讓 cards-svc 啟動前先鎖死等待 progress-svc 回應，兩邊一起報 503</button>
+            <button class="choice-btn ${msQuiz === 0 ? "correct" : ""}" onclick="pickMsQuiz(0)">A. 讀題庫與寫進度解耦，替 POST /api/progress 設短逾時（如 2 秒）＋降級提示稍後重試，題庫先正常顯示</button>
+            <button class="choice-btn ${msQuiz === 1 ? "wrong" : ""}" onclick="pickMsQuiz(1)">B. 把 POST /api/progress 的逾時延長到 120 秒，讓使用者慢慢等它恢復</button>
+            <button class="choice-btn ${msQuiz === 2 ? "wrong" : ""}" onclick="pickMsQuiz(2)">C. 讓 cards-svc 收到請求時先等待 progress-svc 寫入成功，兩邊一起報 503</button>
           </div>
           ${fb}
         `;
