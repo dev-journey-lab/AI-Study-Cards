@@ -220,7 +220,7 @@
         <h1 class="title">🛡️ 資安與 API 防護</h1>
       </div>
       <div class="header-actions">
-        <span id="progress-badge" class="badge-progress">已記住 0 / 8</span>
+        <span id="progress-badge" class="badge-progress">已記住 0 / 10</span>
         <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
         <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
       </div>
@@ -234,26 +234,31 @@
     </div>
 
     <div id="cat-bar" class="cat-bar hidden">
-      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (8)</button>
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (10)</button>
       <button id="cat-fe" class="cat-pill" onclick="setCategory('fe')">前端防護 (3)</button>
-      <button id="cat-be" class="cat-pill" onclick="setCategory('be')">後端與 API (3)</button>
+      <button id="cat-be" class="cat-pill" onclick="setCategory('be')">後端與 API (5)</button>
       <button id="cat-key" class="cat-pill" onclick="setCategory('key')">金鑰管控 (2)</button>
       <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
     </div>
 
-    <!-- VIEW 0: Security Unit 1 -->
+    <!-- VIEW 0: Security Interactive Units -->
     <div id="view-unit">
+      <div class="grade-grid" style="margin-bottom:12px;">
+        <button id="btn-sel-sec-u1" class="btn btn-primary" onclick="selectSecUnit('unit1')">單元 1：金鑰與限流</button>
+        <button id="btn-sel-sec-u2" class="btn" onclick="selectSecUnit('unit2')">單元 2：公開 API 防打爆</button>
+      </div>
+
       <div class="card">
         <div class="card-meta">
           <div class="meta-left">
-            <span class="q-num">階段 3・資安單元 1</span>
+            <span id="sec-unit-num" class="q-num">階段 3・資安單元 1 / 2</span>
             <span class="q-cat">實戰手把手・5～8 分鐘</span>
-            <span id="sec-u1-status" class="status-tag hidden"></span>
+            <span id="sec-u-status" class="status-tag hidden"></span>
           </div>
-          <span id="sec-unit-badge" class="q-cat">學完 0 / 1 單元</span>
+          <span id="sec-unit-badge" class="q-cat">學完 0 / 2 單元</span>
         </div>
-        <div class="question-text" style="margin-bottom:6px;">怎麼防 API 被惡意狂打，又不把金鑰漏出去？</div>
-        <div class="unit-goal">
+        <div id="sec-unit-title" class="question-text" style="margin-bottom:6px;">怎麼防 API 被惡意狂打，又不把金鑰漏出去？</div>
+        <div id="sec-unit-goal" class="unit-goal">
           <b>學完要會做什麼：</b>能把金鑰安全移到後端 Proxy、看懂限流 <code>429</code> 與鎖 IP 的差別，並在金鑰誤推 GitHub 時做出正確補救。
         </div>
       </div>
@@ -265,13 +270,15 @@
           <button id="btn-sec-prev" class="btn" onclick="prevSecStep()">← 上一步</button>
           <button id="btn-sec-next" class="btn btn-primary" onclick="nextSecStep()">下一步 →</button>
         </div>
-        <details class="cmd-details" style="margin-top:12px;">
-          <summary>📝 階段實作核對（目前靜態版可交出的檢查證據）</summary>
-          <div style="margin-top:8px;line-height:1.55;">
-            • 檢查 <code>.gitignore</code> 已列入 <code>.env</code>（可用 <code>git check-ignore -v .env</code> 驗證），且所有前端 <code>.html</code> 無硬編碼密鑰。<br />
-            • 註：本倉庫目前為靜態網頁版，尚無後端 <code>/api/explain</code>；限流 <code>429</code> 與 <code>Retry-After</code> 實機壓測將於後端練習版加入後進行。
-          </div>
-        </details>
+        <details id="sec-deliverable" class="cmd-details" style="margin-top:12px;"></details>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">🧭 學習關係歷程（為什麼在這裡學資安與防打爆？）</div>
+        <div class="answer-point">• <b>階段 1（Git / UI）</b>：先改得動網頁、管得住版本（<code>.gitignore</code> 不誤推密鑰）。</div>
+        <div class="answer-point">• <b>階段 2（API / React）</b>：接得到資料、看懂請求與回應（<code>401 / 403 / 429 / 503</code>）。</div>
+        <div class="answer-point">• <b>階段 3（目前・資安與防打爆）</b>：公開對外時守住金鑰（單元 1），並靠邊緣 WAF、分級限流、三硬上限防止系統被打掛（單元 2）。</div>
+        <div class="answer-point" style="margin-bottom:0;">• <b>階段 4（下一步・系統邊界）</b>：當流量撐爆「存進度」資料庫時，透過服務邊界與優雅降級，保住核心「讀題庫」照常運作。</div>
       </div>
     </div>
 
@@ -446,6 +453,31 @@
           "• <b>正確順序</b>：1. <b>立刻吊銷並重發新金鑰（Revoke &amp; Rotate）</b>並查帳單；2. 執行 <b><code>git rm --cached .env</code> 停止追蹤</b>，再加入 <code>.gitignore</code> 並用 <code>git check-ignore -v .env</code> 驗證；3. 必要時以 <code>git filter-repo</code> 清理既有歷史並重推。"
         ],
         code: "1. 立刻吊銷換新金鑰 (Revoke & Rotate)\n2. git rm --cached .env && echo \".env\" >> .gitignore && git check-ignore -v .env\n3. 視需要以 git filter-repo 清理既有提交歷史"
+      },
+      {
+        id: 9,
+        cat: "be",
+        catName: "後端與 API",
+        q: "公開 API 入口必設的「三個防塞爆硬上限（Body 大小、分頁筆數、Request Timeout）」各在防什麼？",
+        hint: "想想看：丟 100MB 垃圾 JSON、帶 ?limit=9999999、以及故意不送完封包的慢連線。",
+        ans: [
+          "• <b>1. Body 大小上限（如 1MB）</b>：防止攻擊者送超大 JSON 撐爆伺服器記憶體（OOM）。",
+          "• <b>2. 分頁筆數上限（如 <code>limit &lt;= 50</code>）</b>：防止查詢 <code>?limit=9999999</code> 一次撈出整張表拖垮資料庫。",
+          "• <b>3. 請求逾時（Timeout，如 10 秒）</b>：防止慢速連線（Slowloris）或卡死的外部呼叫長期占住所有執行緒。"
+        ],
+        code: "// 設定舉例（Node / Express）\napp.use(express.json({ limit: '1mb' }));\nconst limit = Math.min(Number(req.query.limit) || 20, 50);\nserver.requestTimeout = 10_000;"
+      },
+      {
+        id: 10,
+        cat: "be",
+        catName: "後端與 API",
+        q: "系統突發爆量時，什麼是「優雅降級（Graceful Degradation）」與「負載卸載（Load Shedding）」？",
+        hint: "寧可禮貌拒絕多餘流量或暫停次要功能，也不要讓整台主機當機。",
+        ans: [
+          "• <b>負載卸載（Load Shedding）</b>：偵測到超過安全負荷時，主動拒絕多餘新請求（回 <code>429</code> 或 <code>503</code>），保護已經在處理中的請求不全部死掉。",
+          "• <b>優雅降級（Graceful Degradation）</b>：當次要依賴（如寫入進度 DB 或 AI 生成）過載時，暫時關閉該次要功能並提示稍後重試，<b>保住核心「讀題庫」服務照常運作</b>。"
+        ],
+        code: "硬扛不降級 -> DB 塞爆 + OOM -> 全站一起掛\n優雅降級   -> 寫入回 503 提示稍後重試，核心讀題庫仍 200 OK"
       }
     ];
 
@@ -461,9 +493,10 @@
     let currentIdx = 0;
     let showAns = false;
     let showHint = false;
-    let secStep = 0;
-    let secPred = null;
-    let secQuiz = null;
+    let activeSecUnit = "unit1";
+    let secStepMap = { unit1: 0, unit2: 0 };
+    let secPredMap = { unit1: null, unit2: null };
+    let secQuizMap = { unit1: null, unit2: null };
 
     function readJsonMap(key) {
       try {
@@ -511,14 +544,19 @@
       const unitsDone = Object.values(unitMap).filter(Boolean).length;
       document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
       document.getElementById("cat-review").textContent = `待複習 (${review})`;
-      document.getElementById("sec-unit-badge").textContent = `學完 ${unitsDone} / 1 單元`;
-      const st = document.getElementById("sec-u1-status");
-      if (unitMap.unit1) {
+      document.getElementById("sec-unit-badge").textContent = `學完 ${unitsDone} / 2 單元`;
+      const st = document.getElementById("sec-u-status");
+      if (unitMap[activeSecUnit]) {
         st.textContent = "✓ 已完成";
         st.className = "status-tag status-mastered";
       } else {
         st.className = "status-tag hidden";
       }
+    }
+
+    function selectSecUnit(uid) {
+      activeSecUnit = uid;
+      renderSecUnit();
     }
 
     function switchMode(mode) {
@@ -551,130 +589,249 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function setSecStep(idx) { secStep = Math.max(0, Math.min(4, idx)); renderSecUnit(); }
-    function prevSecStep() { if (secStep > 0) setSecStep(secStep - 1); }
-    function nextSecStep() { if (secStep < 4) setSecStep(secStep + 1); }
-    function pickSecPred(c) { secPred = c; renderSecUnit(); }
+    function setSecStep(idx) { secStepMap[activeSecUnit] = Math.max(0, Math.min(4, idx)); renderSecUnit(); }
+    function prevSecStep() { if (secStepMap[activeSecUnit] > 0) setSecStep(secStepMap[activeSecUnit] - 1); }
+    function nextSecStep() { if (secStepMap[activeSecUnit] < 4) setSecStep(secStepMap[activeSecUnit] + 1); }
+    function pickSecPred(c) { secPredMap[activeSecUnit] = c; renderSecUnit(); }
     function pickSecQuiz(c) {
-      secQuiz = c;
-      if (c === 0) { saveUnitDone("unit1"); }
+      secQuizMap[activeSecUnit] = c;
+      const right = activeSecUnit === "unit1" ? 0 : 1;
+      if (c === right) { saveUnitDone(activeSecUnit); }
       renderSecUnit();
     }
 
     function renderSecUnit() {
       updateBadges();
-      const labels = ["1. 看漏洞", "2. 改代理", "3. 加限流", "4. 卡點預測", "5. 驗收題"];
+      const isU1 = activeSecUnit === "unit1";
+      const step = secStepMap[activeSecUnit];
+      const pred = secPredMap[activeSecUnit];
+      const quiz = secQuizMap[activeSecUnit];
+
+      document.getElementById("btn-sel-sec-u1").className = isU1 ? "btn btn-primary" : "btn";
+      document.getElementById("btn-sel-sec-u2").className = !isU1 ? "btn btn-primary" : "btn";
+      document.getElementById("sec-unit-num").textContent = isU1 ? "階段 3・資安單元 1 / 2" : "階段 3・資安單元 2 / 2";
+      document.getElementById("sec-unit-title").textContent = isU1
+        ? "怎麼防 API 被惡意狂打，又不把金鑰漏出去？"
+        : "公開 API 怎麼防外面打到系統壞掉？";
+      document.getElementById("sec-unit-goal").innerHTML = isU1
+        ? "<b>學完要會做什麼：</b>能把金鑰安全移到後端 Proxy、看懂限流 <code>429</code> 與鎖 IP 的差別，並在金鑰誤推 GitHub 時做出正確補救。"
+        : "<b>學完要會做什麼：</b>能針對公開 API 設計分級限流、入口三個防塞爆硬上限，並看懂超載時如何靠優雅降級保住核心功能。";
+
+      const labels = isU1
+        ? ["1. 看漏洞", "2. 改代理", "3. 加限流", "4. 卡點預測", "5. 驗收題"]
+        : ["1. 看死法", "2. 分級限流", "3. 三硬上限", "4. 卡點預測", "5. 驗收題"];
       document.getElementById("sec-step-pills").innerHTML = labels.map((lb, i) => {
-        const cls = i === secStep ? "step-pill active" : (i === 4 && unitMap.unit1) ? "step-pill done" : "step-pill";
+        const cls = i === step ? "step-pill active" : (i === 4 && unitMap[activeSecUnit]) ? "step-pill done" : "step-pill";
         return `<button class="${cls}" onclick="setSecStep(${i})">${lb}</button>`;
       }).join("");
 
       const body = document.getElementById("sec-body");
-      if (secStep === 0) {
-        body.innerHTML = `
-          <div class="step-label">步驟 1 / 5・看見前端金鑰外洩</div>
-          <div class="step-op">把付費 API Key 直接寫在學習卡前端 JS 裡，按 F12 會看到什麼？</div>
-          <pre class="code-block">// ❌ 危險：任何訪客按 F12 → Network 都看光光
+      if (isU1) {
+        if (step === 0) {
+          body.innerHTML = `
+            <div class="step-label">步驟 1 / 5・看見前端金鑰外洩</div>
+            <div class="step-op">把付費 API Key 直接寫在學習卡前端 JS 裡，按 F12 會看到什麼？</div>
+            <pre class="code-block">// ❌ 危險：任何訪客按 F12 → Network 都看光光
 fetch("https://api.openai.com/v1/responses", {
   headers: { Authorization: "Bearer sk-live-9f8e7d..." }
 });</pre>
-          <div class="step-explain">只要程式碼跑到使用者瀏覽器，密鑰就等同公開，幾分鐘內就可能被拿去盜刷帳單。</div>
-        `;
-      } else if (secStep === 1) {
-        body.innerHTML = `
-          <div class="step-label">步驟 2 / 5・改走後端 Proxy 與環境變數</div>
-          <div class="step-op">前端改打自己的 <code>/api/explain</code>，金鑰只留在後端 <code>.env</code></div>
-          <pre class="code-block">[前端瀏覽器]  --無金鑰-->  [你的後端 /api/explain]
+            <div class="step-explain">只要程式碼跑到使用者瀏覽器，密鑰就等同公開，幾分鐘內就可能被拿去盜刷帳單。</div>
+          `;
+        } else if (step === 1) {
+          body.innerHTML = `
+            <div class="step-label">步驟 2 / 5・改走後端 Proxy 與環境變數</div>
+            <div class="step-op">前端改打自己的 <code>/api/explain</code>，金鑰只留在後端 <code>.env</code></div>
+            <pre class="code-block">[前端瀏覽器]  --無金鑰-->  [你的後端 /api/explain]
                                │ 讀取 process.env.API_KEY
                                ▼
                          [第三方 AI API]</pre>
-          <div class="step-explain">瀏覽器只看得到你自己的接口，完全摸不到第三方金鑰；同時把 <code>.env</code> 寫進 <code>.gitignore</code> 防止誤推 Git。</div>
-          <details class="cmd-details">
-            <summary>展開完整指令</summary>
-            <pre class="code-block">echo ".env" >> .gitignore
+            <div class="step-explain">瀏覽器只看得到你自己的接口，完全摸不到第三方金鑰；同時把 <code>.env</code> 寫進 <code>.gitignore</code> 防止誤推 Git。</div>
+            <details class="cmd-details">
+              <summary>展開完整指令</summary>
+              <pre class="code-block">echo ".env" >> .gitignore
 git check-ignore -v .env   # 確認 Git 確實忽略 .env</pre>
-          </details>
-        `;
-      } else if (secStep === 2) {
-        body.innerHTML = `
-          <div class="step-label">步驟 3 / 5・後端加上限流（示意輸出）</div>
-          <div class="step-op">連打 10 次受保護 API，超過額度時後端應回傳 <code>429</code> 與 <code>Retry-After</code></div>
-          <pre class="code-block"># 【示意輸出：靜態版尚無後端 /api/explain】
+            </details>
+          `;
+        } else if (step === 2) {
+          body.innerHTML = `
+            <div class="step-label">步驟 3 / 5・後端加上限流（示意輸出）</div>
+            <div class="step-op">連打 10 次受保護 API，超過額度時後端應回傳 <code>429</code> 與 <code>Retry-After</code></div>
+            <pre class="code-block"># 【示意輸出：靜態版尚無後端 /api/explain】
 HTTP/1.1 429 Too Many Requests
 Retry-After: 60
 {"code":"RATE_LIMITED","message":"請 60 秒後再試"}</pre>
-          <div class="step-explain">限流不只擋暴力破解，也能保護你的後端與 AI 額度不被單一腳本瞬間打爆；檢查標頭時要看到 <code>429</code> 與 <code>Retry-After</code>。</div>
-          <details class="cmd-details">
-            <summary>展開完整指令（未來接上後端練習版時使用）</summary>
-            <pre class="code-block"># 連送 10 次請求並檢視狀態碼與 Retry-After 標頭
+            <div class="step-explain">限流不只擋暴力破解，也能保護你的後端與 AI 額度不被單一腳本瞬間打爆；檢查標頭時要看到 <code>429</code> 與 <code>Retry-After</code>。</div>
+            <details class="cmd-details">
+              <summary>展開完整指令（未來接上後端練習版時使用）</summary>
+              <pre class="code-block"># 連送 10 次請求並檢視狀態碼與 Retry-After 標頭
 for i in {1..10}; do
   curl -s -D - -o /dev/null http://localhost:8787/api/explain | grep -iE "^(HTTP/|Retry-After:)"
 done</pre>
-          </details>
-        `;
-      } else if (secStep === 3) {
-        const predHtml = secPred !== null ? `
-          <div class="feedback-box ${secPred === 0 ? "feedback-ok" : "feedback-warn"}">
-            <b>${secPred === 0 ? "✓ 判斷正確！" : "↻ 實務上很常踩到這個誤傷！"}</b>
-            同一個公司或校園 Wi-Fi 的人都共用同一個對外 IP，永久封 IP 會誤殺無辜；正確做法是 <b>WAF ＋ 按帳號／端點限流（429）＋ 短期封鎖</b>。
-          </div>
-          <div class="diff-grid">
-            <div class="diff-panel">
-              <div class="diff-panel-title">只靠永久鎖 IP（脆弱）</div>
-              <pre class="code-block" style="margin-top:0;">攻擊者換代理 IP 繼續打\n同 Wi-Fi 正常同事全被封</pre>
+            </details>
+          `;
+        } else if (step === 3) {
+          const predHtml = pred !== null ? `
+            <div class="feedback-box ${pred === 0 ? "feedback-ok" : "feedback-warn"}">
+              <b>${pred === 0 ? "✓ 判斷正確！" : "↻ 實務上很常踩到這個誤傷！"}</b>
+              同一個公司或校園 Wi-Fi 的人都共用同一個對外 IP，永久封 IP 會誤殺無辜；正確做法是 <b>WAF ＋ 按帳號／端點限流（429）＋ 短期封鎖</b>。
             </div>
-            <div class="diff-panel">
-              <div class="diff-panel-title">多層防禦（建議）</div>
-              <pre class="code-block" style="margin-top:0;">Cloudflare WAF 先濾流量\n後端按帳號/IP 限流回 429</pre>
+            <div class="diff-grid">
+              <div class="diff-panel">
+                <div class="diff-panel-title">只靠永久鎖 IP（脆弱）</div>
+                <pre class="code-block" style="margin-top:0;">攻擊者換代理 IP 繼續打\n同 Wi-Fi 正常同事全被封</pre>
+              </div>
+              <div class="diff-panel">
+                <div class="diff-panel-title">多層防禦（建議）</div>
+                <pre class="code-block" style="margin-top:0;">Cloudflare WAF 先濾流量\n後端按帳號/IP 限流回 429</pre>
+              </div>
             </div>
-          </div>
-        ` : "";
-        body.innerHTML = `
-          <div class="step-label">步驟 4 / 5・常見卡點預測</div>
-          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>你的公開學習卡 API 遭到異常狂打，你決定把該來源 IP 加入「永久黑名單」。</div>
-          <div class="step-op">只靠「永久鎖單一 IP」最容易遇到哪兩個問題？</div>
-          <div class="choice-list">
-            <button class="choice-btn ${secPred === 0 ? "correct" : ""}" onclick="pickSecPred(0)">A. 攻擊者換代理 IP 就能繞過，還會誤封共用 Wi-Fi 的正常使用者</button>
-            <button class="choice-btn ${secPred === 1 ? "wrong" : ""}" onclick="pickSecPred(1)">B. 只要鎖了 IP 就一勞永逸，不需要限流也不用驗證身分</button>
-          </div>
-          ${predHtml}
-        `;
-      } else {
-        const showPassed = secQuiz === 0 || (secQuiz === null && unitMap.unit1);
-        const fb = showPassed ? `
-          <div class="feedback-box feedback-ok">
-            <b>✓ ${secQuiz === 0 ? "答對了！已完成資安單元 1" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
-            公開儲存庫上的金鑰幾秒內就會被自動化爬蟲掃走，必須<b>第一時間吊銷並重發金鑰</b>；接著用 <code>git rm --cached .env</code> 停止追蹤、補進 <code>.gitignore</code>（用 <code>git check-ignore -v .env</code> 確認），必要時再清理既有歷史並查帳單。
-            <div style="margin-top:10px;">
-              <button class="btn btn-primary" style="width:100%;" onclick="reviewSecCards()">👉 複習資安與 API 防護題卡（8 題）</button>
+          ` : "";
+          body.innerHTML = `
+            <div class="step-label">步驟 4 / 5・常見卡點預測</div>
+            <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>你的公開學習卡 API 遭到異常狂打，你決定把該來源 IP 加入「永久黑名單」。</div>
+            <div class="step-op">只靠「永久鎖單一 IP」最容易遇到哪兩個問題？</div>
+            <div class="choice-list">
+              <button class="choice-btn ${pred === 0 ? "correct" : ""}" onclick="pickSecPred(0)">A. 攻擊者換代理 IP 就能繞過，還會誤封共用 Wi-Fi 的正常使用者</button>
+              <button class="choice-btn ${pred === 1 ? "wrong" : ""}" onclick="pickSecPred(1)">B. 只要鎖了 IP 就一勞永逸，不需要限流也不用驗證身分</button>
             </div>
-          </div>
-        ` : secQuiz !== null ? `
-          <div class="feedback-box feedback-warn">
-            <b>想想看攻擊者的速度：</b>一旦推上公開 GitHub，舊 commit 歷史仍在且爬蟲已經抓走金鑰了。哪一步能「立刻讓被抓走的金鑰失效」？
-          </div>
-        ` : "";
+            ${predHtml}
+          `;
+        } else {
+          const showPassed = quiz === 0 || (quiz === null && unitMap.unit1);
+          const fb = showPassed ? `
+            <div class="feedback-box feedback-ok">
+              <b>✓ ${quiz === 0 ? "答對了！已完成資安單元 1" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
+              公開儲存庫上的金鑰幾秒內就會被自動化爬蟲掃走，必須<b>第一時間吊銷並重發金鑰</b>；接著用 <code>git rm --cached .env</code> 停止追蹤、補進 <code>.gitignore</code>（用 <code>git check-ignore -v .env</code> 確認），必要時再清理既有歷史並查帳單。
+              <div style="margin-top:10px;">
+                <button class="btn btn-primary" style="width:100%;" onclick="reviewSecCards()">👉 複習資安與 API 防護題卡（10 題）</button>
+              </div>
+            </div>
+          ` : quiz !== null ? `
+            <div class="feedback-box feedback-warn">
+              <b>想想看攻擊者的速度：</b>一旦推上公開 GitHub，舊 commit 歷史仍在且爬蟲已經抓走金鑰了。哪一步能「立刻讓被抓走的金鑰失效」？
+            </div>
+          ` : "";
 
-        body.innerHTML = `
-          <div class="step-label">步驟 5 / 5・單元驗收</div>
-          <div class="step-op">你不小心把含有正式環境 <code>OPENAI_API_KEY</code> 的 <code>.env</code> 推上了公開 GitHub，最正確的第一動作是什麼？</div>
-          <pre class="code-block">To github.com:dev-journey-lab/AI-Study-Cards.git
+          body.innerHTML = `
+            <div class="step-label">步驟 5 / 5・單元驗收</div>
+            <div class="step-op">你不小心把含有正式環境 <code>OPENAI_API_KEY</code> 的 <code>.env</code> 推上了公開 GitHub，最正確的第一動作是什麼？</div>
+            <pre class="code-block">To github.com:dev-journey-lab/AI-Study-Cards.git
    3e1460d..a1b2c3d  main -> main   # 不慎包含 .env！</pre>
-          <div class="choice-list">
-            <button class="choice-btn ${secQuiz === 0 ? "correct" : ""}" onclick="pickSecQuiz(0)">A. 立刻到 API 後台吊銷（Revoke）並換發新金鑰，再補 .gitignore 與查帳單</button>
-            <button class="choice-btn ${secQuiz === 1 ? "wrong" : ""}" onclick="pickSecQuiz(1)">B. 直接刪掉 .env 再 git commit && git push 蓋過去就安全了</button>
-            <button class="choice-btn ${secQuiz === 2 ? "wrong" : ""}" onclick="pickSecQuiz(2)">C. 只要把 GitHub 儲存庫改回 Private，舊金鑰就可以繼續安心使用</button>
-          </div>
-          ${fb}
-        `;
+            <div class="choice-list">
+              <button class="choice-btn ${quiz === 0 ? "correct" : ""}" onclick="pickSecQuiz(0)">A. 立刻到 API 後台吊銷（Revoke）並換發新金鑰，再補 .gitignore 與查帳單</button>
+              <button class="choice-btn ${quiz === 1 ? "wrong" : ""}" onclick="pickSecQuiz(1)">B. 直接刪掉 .env 再 git commit && git push 蓋過去就安全了</button>
+              <button class="choice-btn ${quiz === 2 ? "wrong" : ""}" onclick="pickSecQuiz(2)">C. 只要把 GitHub 儲存庫改回 Private，舊金鑰就可以繼續安心使用</button>
+            </div>
+            ${fb}
+          `;
+        }
+      } else {
+        if (step === 0) {
+          body.innerHTML = `
+            <div class="step-label">步驟 1 / 5・看懂公開 API 怎麼被打爆（示意案例）</div>
+            <div class="step-op">沒設上限的公開查詢遇到爬蟲狂打，後端日誌會長什麼樣子？</div>
+            <pre class="code-block"># 【示意日誌：未來接上題庫後端時的典型故障】
+[WARN] GET /api/cards?limit=9999999  duration=8420ms
+[ERR]  DB connection pool exhausted (100/100)
+[ERR]  HTTP/1.1 503 Service Unavailable</pre>
+            <div class="step-explain">不需要大型 DDoS，只要沒設查詢上限與快取，幾百個並發請求就能把資料庫連線池拖死。</div>
+          `;
+        } else if (step === 1) {
+          body.innerHTML = `
+            <div class="step-label">步驟 2 / 5・邊緣快取 ＋ 依成本分級限流（設定舉例）</div>
+            <div class="step-op">把便宜的讀取留給 CDN 快取，昂貴端點按帳號嚴格限流</div>
+            <pre class="code-block"># 【設定舉例】依端點成本分級限流
+GET  /api/cards    -> 60 req/min/IP   + CDN 快取 5 分鐘
+POST /api/progress -> 30 req/min/user (須登入)
+POST /api/explain  ->  5 req/min/user (須登入 + Turnstile)</pre>
+            <div class="step-explain">流量擋在越外層越省錢；能快取的 <code>GET</code> 根本不用打進主機，會花錢的端點必須綁定帳號限流。</div>
+          `;
+        } else if (step === 2) {
+          body.innerHTML = `
+            <div class="step-label">步驟 3 / 5・入口寫死三個防塞爆硬上限（設定舉例）</div>
+            <div class="step-op">在後端入口限制 Body 大小、分頁筆數與請求逾時</div>
+            <pre class="code-block">// 【設定舉例】Node / Express 入口防護
+app.use(express.json({ limit: "1mb" }));             // 1. Body 上限
+const limit = Math.min(Number(req.query.limit) || 20, 50); // 2. 最多 50 筆
+server.requestTimeout = 10_000;                      // 3. 逾時 10 秒</pre>
+            <div class="step-explain">這三行能擋掉超大 JSON 撐爆記憶體、<code>?limit=9999999</code> 撈爆資料庫與慢速連線長期佔線。</div>
+          `;
+        } else if (step === 3) {
+          const predHtml = pred !== null ? `
+            <div class="feedback-box ${pred === 0 ? "feedback-ok" : "feedback-warn"}">
+              <b>${pred === 0 ? "✓ 判斷正確！" : "↻ 硬扛反而會讓全站一起雪崩！"}</b>
+              成熟系統在超載時會主動<b>負載卸載（回 429／503）＋優雅降級</b>：暫停次要寫入、保住核心「讀題庫」繼續正常提供服務。
+            </div>
+            <div class="diff-grid">
+              <div class="diff-panel">
+                <div class="diff-panel-title">硬扛不降級（雪崩）</div>
+                <pre class="code-block" style="margin-top:0;">所有請求卡在 DB 排隊\n記憶體爆掉 -> 全站 502</pre>
+              </div>
+              <div class="diff-panel">
+                <div class="diff-panel-title">優雅降級（丟車保帥）</div>
+                <pre class="code-block" style="margin-top:0;">存進度回 503 稍後重試\n讀題庫靠快取維持 200 OK</pre>
+              </div>
+            </div>
+          ` : "";
+          body.innerHTML = `
+            <div class="step-label">步驟 4 / 5・常見卡點預測（銜接階段 4 系統邊界）</div>
+            <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>你的學習卡網站湧入 10 倍流量，「存進度」資料庫已經超載，但「讀題庫」有快取。</div>
+            <div class="step-op">這時候系統該怎麼處理最穩妥？</div>
+            <div class="choice-list">
+              <button class="choice-btn ${pred === 0 ? "correct" : ""}" onclick="pickSecPred(0)">A. 存進度主動回 503 提示稍後重試，保住核心「讀題庫」維持 200 OK</button>
+              <button class="choice-btn ${pred === 1 ? "wrong" : ""}" onclick="pickSecPred(1)">B. 全部請求照單全收排隊等待，直到主機記憶體撐爆一起重開</button>
+            </div>
+            ${predHtml}
+          `;
+        } else {
+          const showPassed = quiz === 1 || (quiz === null && unitMap.unit2);
+          const fb = showPassed ? `
+            <div class="feedback-box feedback-ok">
+              <b>✓ ${quiz === 1 ? "答對了！已完成資安單元 2" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
+              日誌證據直接指向 <code>limit=9999999</code> 撈了 50 萬筆把連線池拖乾。對症下藥是先在入口把分頁硬上限鎖死（如 <code>&lt;= 50</code>）、對熱門題庫加快取，再搭配逾時與限流。
+              <div style="margin-top:10px;">
+                <button class="btn btn-primary" style="width:100%;" onclick="reviewSecCards()">👉 複習資安與 API 防護題卡（10 題）</button>
+              </div>
+            </div>
+          ` : quiz !== null ? `
+            <div class="feedback-box feedback-warn">
+              <b>回頭看日誌裡的兩條證據：</b><code>limit=9999999</code> 與 <code>rows=500000</code> 才是拖垮 <code>DB pool</code> 的元兇，哪個設定最直接堵住這個破口？
+            </div>
+          ` : "";
+
+          body.innerHTML = `
+            <div class="step-label">步驟 5 / 5・單元驗收</div>
+            <div class="step-op">看到以下系統日誌證據時，最對症下藥的第一組防護設定是什麼？</div>
+            <pre class="code-block">[WARN] GET /api/cards?limit=9999999  duration=8420ms  rows=500000
+[ERR]  DB pool exhausted -> 503 Service Unavailable</pre>
+            <div class="choice-list">
+              <button class="choice-btn ${quiz === 0 ? "wrong" : ""}" onclick="pickSecQuiz(0)">A. 把資料庫連線池加大 10 倍，不限制 limit 參數</button>
+              <button class="choice-btn ${quiz === 1 ? "correct" : ""}" onclick="pickSecQuiz(1)">B. 後端強制限制分頁上限（如 limit &lt;= 50）、對熱門題庫加快取，並設請求逾時與限流</button>
+              <button class="choice-btn ${quiz === 2 ? "wrong" : ""}" onclick="pickSecQuiz(2)">C. 只在前端下拉選單移除大筆數選項，後端維持原樣</button>
+            </div>
+            ${fb}
+          `;
+        }
       }
 
       const prevBtn = document.getElementById("btn-sec-prev");
       const nextBtn = document.getElementById("btn-sec-next");
-      prevBtn.disabled = secStep === 0;
-      prevBtn.style.opacity = secStep === 0 ? "0.45" : "1";
-      prevBtn.style.gridColumn = secStep === 4 ? "1 / -1" : "";
-      nextBtn.classList.toggle("hidden", secStep === 4);
+      prevBtn.disabled = step === 0;
+      prevBtn.style.opacity = step === 0 ? "0.45" : "1";
+      prevBtn.style.gridColumn = step === 4 ? "1 / -1" : "";
+      nextBtn.classList.toggle("hidden", step === 4);
+
+      document.getElementById("sec-deliverable").innerHTML = isU1
+        ? `<summary>📝 階段實作核對（目前靜態版可交出的檢查證據）</summary>
+           <div style="margin-top:8px;line-height:1.55;">
+             • 檢查 <code>.gitignore</code> 已列入 <code>.env</code>（可用 <code>git check-ignore -v .env</code> 驗證），且所有前端 <code>.html</code> 無硬編碼密鑰。<br />
+             • 註：本倉庫目前為靜態網頁版，尚無後端 <code>/api/explain</code>；限流 <code>429</code> 與 <code>Retry-After</code> 實機壓測將於後端練習版加入後進行。
+           </div>`
+        : `<summary>📝 階段實作核對（規劃進入後端練習版時的驗收清單）</summary>
+           <div style="margin-top:8px;line-height:1.55;">
+             • 針對 <code>GET /api/cards</code> 與 <code>POST /api/explain</code> 各自寫出分級限流、Body 上限、分頁上限與逾時設定表。<br />
+             • 實作後端練習版時，以 <code>curl</code> 實測超額回 <code>429</code>、帶 <code>?limit=9999</code> 仍被截斷為 <code>50</code> 筆。
+           </div>`;
     }
 
     function renderCard() {
@@ -683,7 +840,7 @@ done</pre>
       if (!list.length) {
         document.getElementById("c-index").textContent = "0 / 0";
         document.getElementById("c-cat").textContent = "無題目";
-        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (8)」繼續練習。";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (10)」繼續練習。";
         document.getElementById("c-hint").classList.add("hidden");
         document.getElementById("c-reveal").classList.add("hidden");
         document.getElementById("c-answer").classList.add("hidden");
@@ -772,7 +929,8 @@ done</pre>
     function resetAll() {
       if (!confirm("確定要重置「資安與 API 防護」的單元與題卡進度嗎？")) return;
       statusMap = {}; unitMap = {}; listOpenMap = {};
-      showAns = false; showHint = false; currentIdx = 0; secStep = 0; secPred = null; secQuiz = null;
+      showAns = false; showHint = false; currentIdx = 0;
+      secStepMap = { unit1: 0, unit2: 0 }; secPredMap = { unit1: null, unit2: null }; secQuizMap = { unit1: null, unit2: null };
       try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UNIT_STORAGE_KEY); } catch (_) {}
       setCategory("all");
       if (currentMode === "unit") renderSecUnit();
