@@ -180,12 +180,25 @@
     }
 
     .stage-row {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
       padding: 10px 12px;
       border-radius: 12px;
       background: var(--card-alt);
       border-left: 3px solid var(--border);
       font-size: 13px;
       line-height: 1.5;
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    .stage-row.stage-clickable {
+      cursor: pointer;
+    }
+
+    .stage-row.stage-clickable:active {
+      transform: scale(0.99);
     }
 
     .stage-row.stage-active {
@@ -193,14 +206,37 @@
       background: var(--primary-soft);
     }
 
+    .stage-row.stage-disabled {
+      opacity: 0.72;
+    }
+
+    .stage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .stage-action {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
     .stage-title {
       font-weight: 700;
       font-size: 14px;
-      margin-bottom: 2px;
     }
 
     .stage-sub {
       color: var(--muted);
+    }
+
+    .deck-card.highlight-pulse {
+      outline: 2px solid var(--accent, var(--primary));
+      outline-offset: 2px;
     }
 
     .deck-list {
@@ -316,39 +352,54 @@
     <div class="summary-card">
       <div class="summary-top">
         <span class="summary-label">🎯 整體熟練度</span>
-        <span id="total-progress" class="summary-num">0 / 46 題（0%）</span>
+        <span id="total-progress" class="summary-num">0 / 54 題（0%）</span>
       </div>
       <div class="progress-track">
         <div id="total-bar" class="progress-fill"></div>
       </div>
     </div>
 
-    <details class="roadmap-card" open>
+    <details id="roadmap-details" class="roadmap-card">
       <summary>
-        <span>🗺️ 五階段學習路線圖（一個小專案主線）</span>
-        <span style="font-size:12px;color:var(--muted);font-weight:600;">展開 / 收合</span>
+        <span>🗺️ 五階段學習路線圖（點此展開 / 跳轉）</span>
+        <span style="font-size:12px;color:var(--primary);font-weight:600;">目前：階段 1</span>
       </summary>
       <div class="stage-list">
-        <div class="stage-row stage-active">
-          <div class="stage-title">階段 1・改得動、看得懂（目前主線）</div>
+        <button type="button" class="stage-row stage-clickable stage-active" onclick="jumpToStage(1)">
+          <div class="stage-head">
+            <span class="stage-title">階段 1・改得動、看得懂（目前主線）</span>
+            <span class="stage-action">前往 ↓</span>
+          </div>
           <div class="stage-sub">Git 基礎 + UI／UX 觀察：用分支改手機學習流程，實測並消除猶豫點。</div>
-        </div>
-        <div class="stage-row">
-          <div class="stage-title">階段 2・接得到資料</div>
+        </button>
+        <button type="button" class="stage-row stage-clickable" onclick="jumpToStage(2)">
+          <div class="stage-head">
+            <span class="stage-title">階段 2・接得到資料</span>
+            <span class="stage-action">前往 ↓</span>
+          </div>
           <div class="stage-sub">HTTP / API + React：用 fetch 讀題庫，做出載入中、成功、空資料與錯誤畫面。</div>
-        </div>
-        <div class="stage-row">
-          <div class="stage-title">階段 3・跑得起、查得到</div>
-          <div class="stage-sub">Git PR + 部署 + Docker + 日誌：啟動題庫 API 並從日誌排查啟動失敗。</div>
-        </div>
-        <div class="stage-row">
-          <div class="stage-title">階段 4・看得懂系統邊界</div>
+        </button>
+        <button type="button" class="stage-row stage-clickable" onclick="jumpToStage(3)">
+          <div class="stage-head">
+            <span class="stage-title">階段 3・跑得起、守得住</span>
+            <span class="stage-action">前往 ↓</span>
+          </div>
+          <div class="stage-sub">前後端資安 + API 限流與金鑰管控 + Docker／日誌排查（資安單元已上線）。</div>
+        </button>
+        <div class="stage-row stage-disabled">
+          <div class="stage-head">
+            <span class="stage-title">階段 4・看得懂系統邊界</span>
+            <span class="pill" style="font-size:11px;">規劃中</span>
+          </div>
           <div class="stage-sub">模組化與微服務：比較單體與拆成「讀題庫／存進度」兩服務的故障影響與代價。</div>
         </div>
-        <div class="stage-row">
-          <div class="stage-title">階段 5・用得好 AI 工具</div>
+        <button type="button" class="stage-row stage-clickable" onclick="jumpToStage(5)">
+          <div class="stage-head">
+            <span class="stage-title">階段 5・用得好 AI 工具</span>
+            <span class="stage-action">前往 ↓</span>
+          </div>
           <div class="stage-sub">AI 協作、工具調用、MCP 與結果驗證：讓 AI 找矛盾並用測試確認，實作唯讀 MCP。</div>
-        </div>
+        </button>
       </div>
     </details>
 
@@ -364,6 +415,7 @@
     const THEME_KEY = "agy_study_theme_v1";
     const DECKS = [
       {
+        stageNum: 1,
         stage: "階段 1",
         title: "🌿 Git 工作流程",
         desc: "核心四區流向、Feature Branch + PR 協作、Merge vs Rebase、Reset / Revert / Reflog 急救",
@@ -375,6 +427,7 @@
         accent: "#ea580c"
       },
       {
+        stageNum: 1,
         stage: "階段 1",
         title: "🎨 UI／UX 基礎實戰",
         desc: "手機動線觀察、辨識猶豫點、主按鈕層級與防呆設計，用實機驗證最小改進",
@@ -386,6 +439,7 @@
         accent: "#7c3aed"
       },
       {
+        stageNum: 2,
         stage: "階段 2",
         title: "🌐 API 請求與回應流程",
         desc: "HTTP 生命週期、RESTful 與狀態碼（401 vs 403）、JWT 驗證、CORS 預檢與 Network/cURL 除錯",
@@ -395,6 +449,7 @@
         accent: "#0d9488"
       },
       {
+        stageNum: 2,
         stage: "階段 2",
         title: "⚛️ React 渲染與開發流程",
         desc: "Trigger → Render → Commit、單向資料流、Immutable State、useEffect 清理與 API 防競態",
@@ -404,6 +459,19 @@
         accent: "#0284c7"
       },
       {
+        stageNum: 3,
+        stage: "階段 3",
+        title: "🛡️ 前後端資安與 API 防護",
+        desc: "前端防 XSS / Token 保存、後端防 IDOR / SQLi、API 限流 429 vs 鎖 IP、金鑰管控與外洩急救",
+        href: "security_mobile_study.html",
+        storageKey: "agy_sec_flashcards_v1",
+        unitStorageKey: "agy_sec_units_v1",
+        unitTotal: 1,
+        total: 8,
+        accent: "#dc2626"
+      },
+      {
+        stageNum: 5,
         stage: "階段 5",
         title: "🔌 MCP 架構與使用",
         desc: "Host / Client / Server 三層、Tools / Resources / Prompts、stdio 與安全治理邊界",
@@ -471,7 +539,7 @@
           : "";
 
         return `
-          <a class="deck-card" href="${deck.href}" style="--accent:${deck.accent};">
+          <a class="deck-card" data-stage="${deck.stageNum}" href="${deck.href}" style="--accent:${deck.accent};">
             <div class="deck-top">
               <h2 class="deck-title"><span class="pill" style="margin-right:6px;font-size:11px;vertical-align:middle;">${deck.stage}</span>${deck.title}</h2>
               <span class="deck-arrow">開始練習 →</span>
@@ -496,6 +564,17 @@
       const totalPct = totalCards ? Math.round((totalMastered / totalCards) * 100) : 0;
       document.getElementById("total-progress").textContent = `${totalMastered} / ${totalCards} 題（${totalPct}%）`;
       document.getElementById("total-bar").style.width = `${totalPct}%`;
+    }
+
+    function jumpToStage(stageNum) {
+      const details = document.getElementById("roadmap-details");
+      if (details) details.open = false;
+      const target = document.querySelector(`.deck-card[data-stage="${stageNum}"]`);
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.focus({ preventScroll: true });
+      target.classList.add("highlight-pulse");
+      setTimeout(() => target.classList.remove("highlight-pulse"), 1400);
     }
 
     renderDecks();

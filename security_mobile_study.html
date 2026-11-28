@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>前後端資安與 API 防護 — 手機隨身學習冊</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #dc2626;
+      --primary-fg: #ffffff;
+      --primary-soft: #fee2e2;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --warning: #d97706;
+      --warning-soft: #fef3c7;
+      --code-bg: #1e293b;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --card-alt: #334155;
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #f87171;
+        --primary-fg: #0f172a;
+        --primary-soft: rgba(248, 113, 113, 0.2);
+        --success: #22c55e;
+        --success-soft: rgba(34, 197, 94, 0.2);
+        --warning: #f59e0b;
+        --warning-soft: rgba(245, 158, 11, 0.2);
+        --code-bg: #020617;
+        --code-fg: #e2e8f0;
+        --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #f87171;
+      --primary-fg: #0f172a;
+      --primary-soft: rgba(248, 113, 113, 0.2);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, 0.2);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245, 158, 11, 0.2);
+      --code-bg: #020617;
+      --code-fg: #e2e8f0;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 84px) 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .container { max-width: 600px; margin: 0 auto; }
+
+    .header {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 12px 0 10px 0; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .back-btn {
+      text-decoration: none; background: var(--card); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 5px 9px; font-size: 13px; font-weight: 600; white-space: nowrap;
+    }
+    .title { font-size: 17px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .badge-progress {
+      font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+      background: var(--primary-soft); color: var(--primary); white-space: nowrap;
+    }
+    .icon-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      border-radius: 8px; padding: 6px 9px; font-size: 13px; cursor: pointer;
+    }
+
+    .tabs {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+      background: var(--card-alt); padding: 4px; border-radius: 12px; margin-bottom: 12px;
+    }
+    .tab-btn {
+      border: none; background: transparent; color: var(--muted);
+      font-size: 13px; font-weight: 600; padding: 9px 2px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+    }
+    .tab-btn.active { background: var(--card); color: var(--primary); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); }
+
+    .cat-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; scrollbar-width: none; }
+    .cat-bar::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      white-space: nowrap; border: 1px solid var(--border); background: var(--card); color: var(--muted);
+      padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .cat-pill.active { border-color: var(--primary); background: var(--primary); color: var(--primary-fg); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px; box-shadow: var(--shadow); margin-bottom: 14px;
+    }
+    .card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+    .meta-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .q-num {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 700;
+      background: var(--primary-soft); color: var(--primary); padding: 3px 9px; border-radius: 6px;
+    }
+    .q-cat { font-size: 12px; color: var(--muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; }
+    .status-tag { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+    .status-mastered { background: var(--success-soft); color: var(--success); }
+    .status-review { background: var(--warning-soft); color: var(--warning); }
+
+    .question-text { font-size: 18px; font-weight: 700; line-height: 1.45; margin-bottom: 14px; }
+    .hint-box {
+      background: var(--card-alt); border-left: 3px solid var(--primary); padding: 10px 12px;
+      border-radius: 8px; font-size: 14px; color: var(--muted); margin-bottom: 14px;
+    }
+    .unit-goal {
+      background: var(--card-alt); border-left: 3px solid var(--primary);
+      padding: 10px 12px; border-radius: 8px; font-size: 14px; margin: 10px 0 0 0;
+    }
+    .reveal-box {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 26px 16px;
+      text-align: center; cursor: pointer; background: var(--card-alt);
+    }
+    .reveal-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+    .reveal-sub { font-size: 13px; color: var(--muted); }
+    .answer-box { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px; }
+    .answer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; font-size: 14px; font-weight: 700; color: var(--primary);
+    }
+    .answer-point { margin-bottom: 10px; font-size: 15px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; background: var(--card-alt); padding: 2px 5px; border-radius: 4px; }
+    pre.code-block {
+      background: var(--code-bg); color: var(--code-fg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px; line-height: 1.45; padding: 12px; border-radius: 10px; overflow-x: auto; margin: 10px 0 0 0;
+    }
+
+    .step-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+    .step-pill {
+      border: 1px solid var(--border); background: var(--card-alt); color: var(--muted);
+      font-size: 12px; font-weight: 700; padding: 6px 2px; border-radius: 8px; cursor: pointer; text-align: center;
+    }
+    .step-pill.active { background: var(--primary); border-color: var(--primary); color: var(--primary-fg); }
+    .step-pill.done { background: var(--success-soft); border-color: transparent; color: var(--success); }
+    .step-label { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .step-op { font-size: 17px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; }
+    .step-explain { margin-top: 12px; font-size: 15px; line-height: 1.55; }
+    .cmd-details {
+      margin-top: 12px; background: var(--card-alt); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 12px; font-size: 13px;
+    }
+    .cmd-details summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    .choice-list { display: grid; gap: 8px; margin-top: 12px; }
+    .choice-btn {
+      width: 100%; text-align: left; border: 1px solid var(--border); background: var(--card-alt); color: var(--text);
+      font-size: 14px; font-weight: 600; padding: 12px 14px; border-radius: 12px; cursor: pointer; line-height: 1.45;
+    }
+    .choice-btn.correct { background: var(--success-soft); border-color: var(--success); }
+    .choice-btn.wrong { background: var(--warning-soft); border-color: var(--warning); }
+    .diff-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    @media (min-width: 460px) { .diff-grid { grid-template-columns: 1fr 1fr; } }
+    .diff-panel { background: var(--card-alt); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .diff-panel-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .feedback-box { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+    .feedback-ok { background: var(--success-soft); border: 1px solid var(--success); }
+    .feedback-warn { background: var(--warning-soft); border: 1px solid var(--warning); }
+    .step-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .grade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn {
+      border: 1px solid var(--border); background: var(--card); color: var(--text);
+      font-size: 15px; font-weight: 600; padding: 12px 10px; border-radius: 12px; cursor: pointer; text-align: center;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+    .btn-success { background: var(--success-soft); color: var(--success); border-color: transparent; }
+    .btn-warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
+
+    .list-item {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+    }
+    .list-q-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .list-q-title { font-size: 16px; font-weight: 700; margin-top: 6px; }
+    .hidden { display: none !important; }
+    .swipe-tip { text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <a href="index.html" class="back-btn">← 目錄</a>
+        <h1 class="title">🛡️ 資安與 API 防護</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-badge" class="badge-progress">已記住 0 / 8</span>
+        <button onclick="toggleTheme()" class="icon-btn" title="切換深淺色">🌓</button>
+        <button onclick="resetAll()" class="icon-btn" title="重置進度">重置</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-unit" class="tab-btn active" onclick="switchMode('unit')">📖 單元教學</button>
+      <button id="tab-flashcard" class="tab-btn" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
+      <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 防禦總覽</button>
+    </div>
+
+    <div id="cat-bar" class="cat-bar hidden">
+      <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (8)</button>
+      <button id="cat-fe" class="cat-pill" onclick="setCategory('fe')">前端防護 (3)</button>
+      <button id="cat-be" class="cat-pill" onclick="setCategory('be')">後端與 API (3)</button>
+      <button id="cat-key" class="cat-pill" onclick="setCategory('key')">金鑰管控 (2)</button>
+      <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
+    </div>
+
+    <!-- VIEW 0: Security Unit 1 -->
+    <div id="view-unit">
+      <div class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span class="q-num">階段 3・資安單元 1</span>
+            <span class="q-cat">實戰手把手・5～8 分鐘</span>
+            <span id="sec-u1-status" class="status-tag hidden"></span>
+          </div>
+          <span id="sec-unit-badge" class="q-cat">學完 0 / 1 單元</span>
+        </div>
+        <div class="question-text" style="margin-bottom:6px;">怎麼防 API 被惡意狂打，又不把金鑰漏出去？</div>
+        <div class="unit-goal">
+          <b>學完要會做什麼：</b>能把金鑰安全移到後端 Proxy、看懂限流 <code>429</code> 與鎖 IP 的差別，並在金鑰誤推 GitHub 時做出正確補救。
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="sec-step-pills" class="step-pills"></div>
+        <div id="sec-body"></div>
+        <div class="step-nav">
+          <button id="btn-sec-prev" class="btn" onclick="prevSecStep()">← 上一步</button>
+          <button id="btn-sec-next" class="btn btn-primary" onclick="nextSecStep()">下一步 →</button>
+        </div>
+        <details class="cmd-details" style="margin-top:12px;">
+          <summary>📝 階段實作核對（目前靜態版可交出的檢查證據）</summary>
+          <div style="margin-top:8px;line-height:1.55;">
+            • 檢查 <code>.gitignore</code> 已列入 <code>.env</code>（可用 <code>git check-ignore -v .env</code> 驗證），且所有前端 <code>.html</code> 無硬編碼密鑰。<br />
+            • 註：本倉庫目前為靜態網頁版，尚無後端 <code>/api/explain</code>；限流 <code>429</code> 與 <code>Retry-After</code> 實機壓測將於後端練習版加入後進行。
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <!-- VIEW 1: Flashcards -->
+    <div id="view-flashcard" class="hidden">
+      <div id="touch-card" class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span id="c-index" class="q-num">Q1 (1/8)</span>
+            <span id="c-cat" class="q-cat">前端防護</span>
+            <span id="c-status" class="status-tag hidden"></span>
+          </div>
+          <button id="btn-hint" class="icon-btn" onclick="toggleHint()">💡 提示</button>
+        </div>
+        <div id="c-question" class="question-text"></div>
+        <div id="c-hint" class="hint-box hidden"></div>
+        <div id="c-reveal" class="reveal-box" onclick="toggleAnswer()">
+          <div class="reveal-title">🔒 答案已隱藏（先在腦中回想）</div>
+          <div class="reveal-sub">點一下這裡打開答案</div>
+        </div>
+        <div id="c-answer" class="answer-box hidden">
+          <div class="answer-header">
+            <span>✓ 標準解析與記憶重點</span>
+            <span onclick="toggleAnswer()" style="color:var(--muted);font-weight:500;text-decoration:underline;cursor:pointer;">收起答案</span>
+          </div>
+          <div id="c-answer-points"></div>
+          <pre id="c-code" class="code-block hidden"></pre>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="btn" onclick="prevCard()">← 上一題</button>
+        <button id="btn-main-toggle" class="btn btn-primary" onclick="toggleAnswer()">👁 打開答案</button>
+        <button class="btn" onclick="nextCard()">下一題 →</button>
+      </div>
+      <div class="grade-grid">
+        <button class="btn btn-warning" onclick="markStatus('review')">↻ 待複習</button>
+        <button class="btn btn-success" onclick="markStatus('mastered')">✓ 已記住（下一題）</button>
+      </div>
+      <div class="swipe-tip">💡 支援手機左右滑動換題・進度自動儲存於瀏覽器</div>
+    </div>
+
+    <!-- VIEW 2: List -->
+    <div id="view-list" class="hidden">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;">
+        <button class="icon-btn" onclick="toggleAllList(false)">🙈 全部隱藏</button>
+        <button class="icon-btn" onclick="toggleAllList(true)">👁 全部打開</button>
+      </div>
+      <div id="list-container"></div>
+    </div>
+
+    <!-- VIEW 3: Defense Architecture -->
+    <div id="view-arch" class="hidden">
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">1. 核心鐵則：前端防騙，後端守門</div>
+        <div class="answer-point">• <b>前端（瀏覽器）</b>：防 XSS（用 <code>escapeHtml</code> / <code>textContent</code> + CSP）、不放 API Secret、防點擊劫持。</div>
+        <div class="answer-point">• <b>後端（伺服器）</b>：每次請求必驗身分（AuthN）與資料所有權（AuthZ）、驗證輸入防 SQLi、留 Audit Log。</div>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">2. API 四層抗攻擊防線</div>
+        <pre class="code-block">[攻擊流量 / 正常請求]
+   ▼  1. 邊緣 WAF + DDoS（如 Cloudflare 先濾惡意流量）
+   ▼  2. 限流 Rate Limit（按帳號 / Token / IP 超過回 429）
+   ▼  3. 認證與授權（驗 JWT + 檢查資源所有權防 IDOR）
+   ▼  4. 資源保護（Body 大小上限 + Timeout + 參數驗證）</pre>
+      </div>
+
+      <div class="card">
+        <div class="q-num" style="display:inline-block;margin-bottom:8px;">3. 金鑰誤推公開 GitHub 急救 SOP</div>
+        <div class="answer-point">• <b>第 1 步（止血）</b>：立刻到 API 供應商後台<b>吊銷並重發（Revoke &amp; Rotate）</b>金鑰，並檢查帳單與異常呼叫日誌。</div>
+        <div class="answer-point">• <b>第 2 步（停止追蹤與忽略）</b>：若 <code>.env</code> 已被追蹤，須先 <code>git rm --cached .env</code> 停止追蹤，再加入 <code>.gitignore</code> 並用 <code>git check-ignore -v .env</code> 確認生效。</div>
+        <div class="answer-point">• <b>第 3 步（清理與預防）</b>：必要時用 <code>git filter-repo</code> 清理既有歷史，並開啟 GitHub Push Protection 與每月消費上限。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CARDS = [
+      {
+        id: 1,
+        cat: "fe",
+        catName: "前端防護",
+        q: "為什麼資安第一條鐵則是「前端永遠不可信任，防線一定要做在後端」？",
+        hint: "攻擊者一定要透過你的網頁按鈕才能發送請求嗎？",
+        ans: [
+          "• <b>瀏覽器完全在攻擊者控制下</b>：前端隱藏按鈕、表單驗證或 JS 變數，按 F12 就能改掉，甚至可以直接用 <code>curl</code> 繞過前端打後端 API。",
+          "• <b>正確分工</b>：前端驗證是為了「好的使用體驗」與「保護瀏覽器不被 XSS 植入」；真正的權限、金額與資料檢查<b>必須全部在後端重驗一次</b>。"
+        ],
+        code: "前端檢查 = 體驗友善（可被 F12 / curl 繞過）\n後端檢查 = 真正防線（每次請求必驗身分與權限）"
+      },
+      {
+        id: 2,
+        cat: "fe",
+        catName: "前端防護",
+        q: "什麼是 XSS（跨站腳本攻擊）？在前端輸出純文字、屬性、URL 與富文本時分別該怎麼防護？",
+        hint: "純文字最安全的是 textContent；不同輸出位置（文字節點／屬性／URL／HTML）需要不同處理方式。",
+        ans: [
+          "• <b>原理</b>：攻擊者把惡意 <code>&lt;script&gt;</code>、事件屬性或 <code>javascript:</code> 連結注入資料，若未依輸出位置正確處理，瀏覽器就會執行惡意程式。",
+          "• <b>依情境防護（OWASP 原則）</b>：1. <b>純文字</b>優先用 <code>textContent</code>（本專案的 <code>escapeHtml()</code> 僅跳脫純文字中的 <code>&amp; &lt; &gt;</code>，不含引號）；2. <b>HTML 屬性</b>需另做屬性編碼；3. <b>URL</b> 須限制只允許 <code>https://</code>／<code>http://</code>；4. <b>需保留格式的富文本 HTML</b> 應交給成熟 sanitizer（如 DOMPurify），並搭配 <b>CSP</b> 作為縱深防禦。"
+        ],
+        code: "✗ el.innerHTML = userInput;    // 危險：直接當 HTML 解析\n✓ el.textContent = userInput;  // 安全：純文字輸出\n// 屬性 / URL / 富文本 HTML 各需對應編碼或 sanitizer，不可混用同一套跳脫"
+      },
+      {
+        id: 3,
+        cat: "fe",
+        catName: "前端防護",
+        q: "前端保存登入 Token 時，放 localStorage 跟 HttpOnly Cookie 有什麼資安差別？",
+        hint: "如果網站不幸中了 XSS，JavaScript 讀得到哪一個？",
+        ans: [
+          "• <b><code>localStorage</code></b>：任何在頁面上執行的 JavaScript 都讀得到，一旦發生 XSS 漏洞，攻擊者一行 <code>localStorage.getItem('token')</code> 就能把憑證偷走。",
+          "• <b><code>HttpOnly + Secure + SameSite</code> Cookie</b>：瀏覽器會自動在 HTTPS 請求附上 Cookie，但 <b>JavaScript 完全無法讀取</b>，大幅降低 XSS 偷憑證的風險（同時靠 <code>SameSite</code> 防 CSRF）。"
+        ],
+        code: "Set-Cookie: refresh_token=...; HttpOnly; Secure; SameSite=Lax; Path=/auth"
+      },
+      {
+        id: 4,
+        cat: "be",
+        catName: "後端與 API",
+        q: "遇到駭客用腳本狂打 API 時，為什麼不能只靠「永久鎖單一 IP」？實務的四層防禦是什麼？",
+        hint: "公司 Wi-Fi 下的同事共用同一個對外 IP，而攻擊者有代理池。",
+        ans: [
+          "• <b>只鎖 IP 的盲點</b>：攻擊者換代理／Botnet 就能繞過，永久封鎖還會誤殺同一個企業或校園 NAT 後面的無辜使用者。",
+          "• <b>四層防禦</b>：1. <b>邊緣 WAF + DDoS（如 Cloudflare）</b>先擋惡意流量；2. <b>限流（Rate Limiting）</b>按帳號／Token／端點限制並回 <code>429</code>；3. <b>Body 大小與 Timeout 上限</b>防資源耗盡；4. 內部後台改用 <b>IP 白名單／Tailscale 私有網</b>。"
+        ],
+        code: "HTTP/1.1 429 Too Many Requests\nRetry-After: 60\n{\"code\":\"RATE_LIMITED\",\"message\":\"請求過於頻繁，請 60 秒後再試\"}"
+      },
+      {
+        id: 5,
+        cat: "be",
+        catName: "後端與 API",
+        q: "什麼是 IDOR（越權存取 / BOLA）漏洞？後端 API 要怎麼防？",
+        hint: "登入後看自己的訂單 /orders/101，如果把網址改成 /orders/102 會怎樣？",
+        ans: [
+          "• <b>漏洞情境</b>：後端只檢查了「使用者有沒有登入（401）」，卻忘了檢查「<b>這筆 <code>order_id=102</code> 是不是屬於目前登入的使用者</b>」，導致改個數字就能偷看或刪改別人的資料。",
+          "• <b>正解</b>：資料庫查詢與更新條件一律強制帶上 Token 解析出的 <code>owner_id = currentUser.id</code>（不可信任前端傳來的 <code>user_id</code>），無權存取直接回 <code>403</code> 或 <code>404</code>。"
+        ],
+        code: "// ✓ 安全：用 Token 內的 req.user.id 綁定所有權\nSELECT * FROM orders WHERE id = $1 AND user_id = $2;"
+      },
+      {
+        id: 6,
+        cat: "be",
+        catName: "後端與 API",
+        q: "什麼是 SQL Injection（SQL 注入）？寫後端查資料庫時怎麼徹底根除？",
+        hint: "不要用字串相加把使用者輸入拼進 SQL 指令裡。",
+        ans: [
+          "• <b>原因</b>：若用字串拼接 SQL（例如 <code>`WHERE name = '${input}'`</code>），攻擊者輸入 <code>' OR '1'='1</code> 就能改變 SQL 語意，繞過登入或撈出整張資料表。",
+          "• <b>徹底根除</b>：一律使用<b>參數化查詢（Parameterized Query / Prepared Statement）</b>或安全 ORM，讓資料庫把使用者輸入永遠當成「純資料」而非「指令」。"
+        ],
+        code: "✗ db.query(`SELECT * FROM users WHERE email = '${email}'`);\n✓ db.query('SELECT * FROM users WHERE email = $1', [email]);"
+      },
+      {
+        id: 7,
+        cat: "key",
+        catName: "金鑰管控",
+        q: "API Key 與 Secret 金鑰管控有哪 5 個基本原則？前端需要呼叫付費 AI API 時該怎麼架構？",
+        hint: "前端絕不直接碰密鑰，必須透過誰來轉發？",
+        ans: [
+          "• <b>架構原則</b>：前端只打<b>自己的後端 Proxy API</b>，由後端從環境變數讀取金鑰再轉發給第三方（如 OpenAI / Gemini）。",
+          "• <b>五大管控</b>：1. 絕不進前端與 Git（<code>.env</code> 放進 <code>.gitignore</code>）；2. 最小權限與網域／IP 限制；3. 設定<b>每月消費硬上限（Billing Cap）</b>；4. dev / staging / prod 環境分離；5. 開啟 GitHub <b>Secret Scanning / Push Protection</b>。"
+        ],
+        code: "[手機瀏覽器] ---> [你的後端 Proxy (讀取 env API_KEY)] ---> [第三方付費 API]"
+      },
+      {
+        id: 8,
+        cat: "key",
+        catName: "金鑰管控",
+        q: "如果不小心把含有正式環境 API Key 的 .env 推上了公開 GitHub，只加入 .gitignore 或刪檔 commit 夠嗎？",
+        hint: "已被 Git 追蹤的檔案，光寫進 .gitignore 會立刻停止追蹤嗎？舊 commit 歷史呢？",
+        ans: [
+          "• <b>完全不夠！</b>公開金鑰幾秒內就會被爬蟲抓走，而且<b>已被 Git 追蹤的 <code>.env</code> 就算寫進 <code>.gitignore</code> 仍會繼續被追蹤</b>。",
+          "• <b>正確順序</b>：1. <b>立刻吊銷並重發新金鑰（Revoke &amp; Rotate）</b>並查帳單；2. 執行 <b><code>git rm --cached .env</code> 停止追蹤</b>，再加入 <code>.gitignore</code> 並用 <code>git check-ignore -v .env</code> 驗證；3. 必要時以 <code>git filter-repo</code> 清理既有歷史並重推。"
+        ],
+        code: "1. 立刻吊銷換新金鑰 (Revoke & Rotate)\n2. git rm --cached .env && echo \".env\" >> .gitignore && git check-ignore -v .env\n3. 視需要以 git filter-repo 清理既有提交歷史"
+      }
+    ];
+
+    const STORAGE_KEY = "agy_sec_flashcards_v1";
+    const UNIT_STORAGE_KEY = "agy_sec_units_v1";
+    const THEME_KEY = "agy_study_theme_v1";
+
+    let statusMap = {};
+    let unitMap = {};
+    let listOpenMap = {};
+    let currentMode = "unit";
+    let currentCat = "all";
+    let currentIdx = 0;
+    let showAns = false;
+    let showHint = false;
+    let secStep = 0;
+    let secPred = null;
+    let secQuiz = null;
+
+    function readJsonMap(key) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+      statusMap = readJsonMap(STORAGE_KEY);
+      unitMap = readJsonMap(UNIT_STORAGE_KEY);
+    } catch (_) {}
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function saveCardStatus(cardId, state) {
+      const latest = readJsonMap(STORAGE_KEY);
+      latest[cardId] = state;
+      statusMap = latest;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap)); } catch (_) {}
+    }
+
+    function saveUnitDone(unitId) {
+      const latest = readJsonMap(UNIT_STORAGE_KEY);
+      latest[unitId] = true;
+      unitMap = latest;
+      try { localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap)); } catch (_) {}
+    }
+
+    function getFiltered() {
+      if (currentCat === "all") return CARDS;
+      if (currentCat === "review") return CARDS.filter(c => statusMap[c.id] === "review");
+      return CARDS.filter(c => c.cat === currentCat);
+    }
+
+    function updateBadges() {
+      const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
+      const review = Object.values(statusMap).filter(v => v === "review").length;
+      const unitsDone = Object.values(unitMap).filter(Boolean).length;
+      document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
+      document.getElementById("cat-review").textContent = `待複習 (${review})`;
+      document.getElementById("sec-unit-badge").textContent = `學完 ${unitsDone} / 1 單元`;
+      const st = document.getElementById("sec-u1-status");
+      if (unitMap.unit1) {
+        st.textContent = "✓ 已完成";
+        st.className = "status-tag status-mastered";
+      } else {
+        st.className = "status-tag hidden";
+      }
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      ["unit", "flashcard", "list", "arch"].forEach(m => {
+        document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
+        document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
+      });
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch" || mode === "unit");
+      if (mode === "unit") renderSecUnit();
+      if (mode === "flashcard") renderCard();
+      if (mode === "list") renderList();
+    }
+
+    function setCategory(cat) {
+      currentCat = cat;
+      currentIdx = 0;
+      showAns = false;
+      showHint = false;
+      ["all", "fe", "be", "key", "review"].forEach(c => {
+        document.getElementById(`cat-${c}`).classList.toggle("active", c === cat);
+      });
+      if (currentMode === "flashcard") renderCard();
+      if (currentMode === "list") renderList();
+    }
+
+    function reviewSecCards() {
+      switchMode("flashcard");
+      setCategory("all");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setSecStep(idx) { secStep = Math.max(0, Math.min(4, idx)); renderSecUnit(); }
+    function prevSecStep() { if (secStep > 0) setSecStep(secStep - 1); }
+    function nextSecStep() { if (secStep < 4) setSecStep(secStep + 1); }
+    function pickSecPred(c) { secPred = c; renderSecUnit(); }
+    function pickSecQuiz(c) {
+      secQuiz = c;
+      if (c === 0) { saveUnitDone("unit1"); }
+      renderSecUnit();
+    }
+
+    function renderSecUnit() {
+      updateBadges();
+      const labels = ["1. 看漏洞", "2. 改代理", "3. 加限流", "4. 卡點預測", "5. 驗收題"];
+      document.getElementById("sec-step-pills").innerHTML = labels.map((lb, i) => {
+        const cls = i === secStep ? "step-pill active" : (i === 4 && unitMap.unit1) ? "step-pill done" : "step-pill";
+        return `<button class="${cls}" onclick="setSecStep(${i})">${lb}</button>`;
+      }).join("");
+
+      const body = document.getElementById("sec-body");
+      if (secStep === 0) {
+        body.innerHTML = `
+          <div class="step-label">步驟 1 / 5・看見前端金鑰外洩</div>
+          <div class="step-op">把付費 API Key 直接寫在學習卡前端 JS 裡，按 F12 會看到什麼？</div>
+          <pre class="code-block">// ❌ 危險：任何訪客按 F12 → Network 都看光光
+fetch("https://api.openai.com/v1/responses", {
+  headers: { Authorization: "Bearer sk-live-9f8e7d..." }
+});</pre>
+          <div class="step-explain">只要程式碼跑到使用者瀏覽器，密鑰就等同公開，幾分鐘內就可能被拿去盜刷帳單。</div>
+        `;
+      } else if (secStep === 1) {
+        body.innerHTML = `
+          <div class="step-label">步驟 2 / 5・改走後端 Proxy 與環境變數</div>
+          <div class="step-op">前端改打自己的 <code>/api/explain</code>，金鑰只留在後端 <code>.env</code></div>
+          <pre class="code-block">[前端瀏覽器]  --無金鑰-->  [你的後端 /api/explain]
+                               │ 讀取 process.env.API_KEY
+                               ▼
+                         [第三方 AI API]</pre>
+          <div class="step-explain">瀏覽器只看得到你自己的接口，完全摸不到第三方金鑰；同時把 <code>.env</code> 寫進 <code>.gitignore</code> 防止誤推 Git。</div>
+          <details class="cmd-details">
+            <summary>展開完整指令</summary>
+            <pre class="code-block">echo ".env" >> .gitignore
+git check-ignore -v .env   # 確認 Git 確實忽略 .env</pre>
+          </details>
+        `;
+      } else if (secStep === 2) {
+        body.innerHTML = `
+          <div class="step-label">步驟 3 / 5・後端加上限流（示意輸出）</div>
+          <div class="step-op">連打 10 次受保護 API，超過額度時後端應回傳 <code>429</code> 與 <code>Retry-After</code></div>
+          <pre class="code-block"># 【示意輸出：靜態版尚無後端 /api/explain】
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+{"code":"RATE_LIMITED","message":"請 60 秒後再試"}</pre>
+          <div class="step-explain">限流不只擋暴力破解，也能保護你的後端與 AI 額度不被單一腳本瞬間打爆；檢查標頭時要看到 <code>429</code> 與 <code>Retry-After</code>。</div>
+          <details class="cmd-details">
+            <summary>展開完整指令（未來接上後端練習版時使用）</summary>
+            <pre class="code-block"># 連送 10 次請求並檢視狀態碼與 Retry-After 標頭
+for i in {1..10}; do
+  curl -s -D - -o /dev/null http://localhost:8787/api/explain | grep -iE "^(HTTP/|Retry-After:)"
+done</pre>
+          </details>
+        `;
+      } else if (secStep === 3) {
+        const predHtml = secPred !== null ? `
+          <div class="feedback-box ${secPred === 0 ? "feedback-ok" : "feedback-warn"}">
+            <b>${secPred === 0 ? "✓ 判斷正確！" : "↻ 實務上很常踩到這個誤傷！"}</b>
+            同一個公司或校園 Wi-Fi 的人都共用同一個對外 IP，永久封 IP 會誤殺無辜；正確做法是 <b>WAF ＋ 按帳號／端點限流（429）＋ 短期封鎖</b>。
+          </div>
+          <div class="diff-grid">
+            <div class="diff-panel">
+              <div class="diff-panel-title">只靠永久鎖 IP（脆弱）</div>
+              <pre class="code-block" style="margin-top:0;">攻擊者換代理 IP 繼續打\n同 Wi-Fi 正常同事全被封</pre>
+            </div>
+            <div class="diff-panel">
+              <div class="diff-panel-title">多層防禦（建議）</div>
+              <pre class="code-block" style="margin-top:0;">Cloudflare WAF 先濾流量\n後端按帳號/IP 限流回 429</pre>
+            </div>
+          </div>
+        ` : "";
+        body.innerHTML = `
+          <div class="step-label">步驟 4 / 5・常見卡點預測</div>
+          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>你的公開學習卡 API 遭到異常狂打，你決定把該來源 IP 加入「永久黑名單」。</div>
+          <div class="step-op">只靠「永久鎖單一 IP」最容易遇到哪兩個問題？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${secPred === 0 ? "correct" : ""}" onclick="pickSecPred(0)">A. 攻擊者換代理 IP 就能繞過，還會誤封共用 Wi-Fi 的正常使用者</button>
+            <button class="choice-btn ${secPred === 1 ? "wrong" : ""}" onclick="pickSecPred(1)">B. 只要鎖了 IP 就一勞永逸，不需要限流也不用驗證身分</button>
+          </div>
+          ${predHtml}
+        `;
+      } else {
+        const showPassed = secQuiz === 0 || (secQuiz === null && unitMap.unit1);
+        const fb = showPassed ? `
+          <div class="feedback-box feedback-ok">
+            <b>✓ ${secQuiz === 0 ? "答對了！已完成資安單元 1" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
+            公開儲存庫上的金鑰幾秒內就會被自動化爬蟲掃走，必須<b>第一時間吊銷並重發金鑰</b>；接著用 <code>git rm --cached .env</code> 停止追蹤、補進 <code>.gitignore</code>（用 <code>git check-ignore -v .env</code> 確認），必要時再清理既有歷史並查帳單。
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary" style="width:100%;" onclick="reviewSecCards()">👉 複習資安與 API 防護題卡（8 題）</button>
+            </div>
+          </div>
+        ` : secQuiz !== null ? `
+          <div class="feedback-box feedback-warn">
+            <b>想想看攻擊者的速度：</b>一旦推上公開 GitHub，舊 commit 歷史仍在且爬蟲已經抓走金鑰了。哪一步能「立刻讓被抓走的金鑰失效」？
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          <div class="step-label">步驟 5 / 5・單元驗收</div>
+          <div class="step-op">你不小心把含有正式環境 <code>OPENAI_API_KEY</code> 的 <code>.env</code> 推上了公開 GitHub，最正確的第一動作是什麼？</div>
+          <pre class="code-block">To github.com:dev-journey-lab/AI-Study-Cards.git
+   3e1460d..a1b2c3d  main -> main   # 不慎包含 .env！</pre>
+          <div class="choice-list">
+            <button class="choice-btn ${secQuiz === 0 ? "correct" : ""}" onclick="pickSecQuiz(0)">A. 立刻到 API 後台吊銷（Revoke）並換發新金鑰，再補 .gitignore 與查帳單</button>
+            <button class="choice-btn ${secQuiz === 1 ? "wrong" : ""}" onclick="pickSecQuiz(1)">B. 直接刪掉 .env 再 git commit && git push 蓋過去就安全了</button>
+            <button class="choice-btn ${secQuiz === 2 ? "wrong" : ""}" onclick="pickSecQuiz(2)">C. 只要把 GitHub 儲存庫改回 Private，舊金鑰就可以繼續安心使用</button>
+          </div>
+          ${fb}
+        `;
+      }
+
+      const prevBtn = document.getElementById("btn-sec-prev");
+      const nextBtn = document.getElementById("btn-sec-next");
+      prevBtn.disabled = secStep === 0;
+      prevBtn.style.opacity = secStep === 0 ? "0.45" : "1";
+      prevBtn.style.gridColumn = secStep === 4 ? "1 / -1" : "";
+      nextBtn.classList.toggle("hidden", secStep === 4);
+    }
+
+    function renderCard() {
+      const list = getFiltered();
+      updateBadges();
+      if (!list.length) {
+        document.getElementById("c-index").textContent = "0 / 0";
+        document.getElementById("c-cat").textContent = "無題目";
+        document.getElementById("c-question").textContent = "目前「待複習」沒有題目！請點選上方「全部 (8)」繼續練習。";
+        document.getElementById("c-hint").classList.add("hidden");
+        document.getElementById("c-reveal").classList.add("hidden");
+        document.getElementById("c-answer").classList.add("hidden");
+        document.getElementById("c-status").classList.add("hidden");
+        return;
+      }
+      if (currentIdx >= list.length) currentIdx = 0;
+      if (currentIdx < 0) currentIdx = list.length - 1;
+      const card = list[currentIdx];
+      document.getElementById("c-index").textContent = `Q${card.id} (${currentIdx + 1}/${list.length})`;
+      document.getElementById("c-cat").textContent = card.catName;
+      document.getElementById("c-question").textContent = card.q;
+      const stEl = document.getElementById("c-status");
+      const st = statusMap[card.id];
+      if (st === "mastered") { stEl.textContent = "✓ 已記住"; stEl.className = "status-tag status-mastered"; }
+      else if (st === "review") { stEl.textContent = "↻ 待複習"; stEl.className = "status-tag status-review"; }
+      else { stEl.className = "status-tag hidden"; }
+      const hintEl = document.getElementById("c-hint");
+      hintEl.textContent = `💡 提示：${card.hint}`;
+      hintEl.classList.toggle("hidden", !showHint);
+      document.getElementById("c-answer-points").innerHTML = card.ans.map(line => `<div class="answer-point">${line}</div>`).join("");
+      const codeEl = document.getElementById("c-code");
+      if (card.code) { codeEl.textContent = card.code; codeEl.classList.remove("hidden"); }
+      else { codeEl.classList.add("hidden"); }
+      document.getElementById("c-reveal").classList.toggle("hidden", showAns);
+      document.getElementById("c-answer").classList.toggle("hidden", !showAns);
+      document.getElementById("btn-main-toggle").textContent = showAns ? "🙈 隱藏答案" : "👁 打開答案";
+    }
+
+    function toggleAnswer() { if (!getFiltered().length) return; showAns = !showAns; renderCard(); }
+    function toggleHint() { if (!getFiltered().length) return; showHint = !showHint; renderCard(); }
+    function nextCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx + 1) % l.length; showAns = false; showHint = false; renderCard(); }
+    function prevCard() { const l = getFiltered(); if (!l.length) return; currentIdx = (currentIdx - 1 + l.length) % l.length; showAns = false; showHint = false; renderCard(); }
+    function markStatus(state) {
+      const l = getFiltered(); if (!l.length) return;
+      saveCardStatus(l[currentIdx].id, state); updateBadges();
+      if (state === "mastered") nextCard(); else renderCard();
+    }
+
+    function renderList() {
+      const list = getFiltered();
+      const box = document.getElementById("list-container");
+      updateBadges();
+      if (!list.length) { box.innerHTML = `<div class="card">目前此分類沒有題目。</div>`; return; }
+      box.innerHTML = list.map(card => {
+        const open = !!listOpenMap[card.id];
+        const st = statusMap[card.id];
+        const stBadge = st === "mastered" ? `<span class="status-tag status-mastered">✓ 已記住</span>`
+          : st === "review" ? `<span class="status-tag status-review">↻ 待複習</span>` : "";
+        return `
+          <div class="list-item">
+            <div class="list-q-row" onclick="toggleListOne(${card.id})">
+              <div>
+                <div class="meta-left">
+                  <span class="q-num">Q${card.id}</span>
+                  <span class="q-cat">${card.catName}</span>
+                  ${stBadge}
+                </div>
+                <div class="list-q-title">${escapeHtml(card.q)}</div>
+              </div>
+              <button class="icon-btn" style="flex-shrink:0;white-space:nowrap;">${open ? "🙈 收起" : "👁 答案"}</button>
+            </div>
+            ${open ? `
+              <div class="answer-box">
+                <div class="hint-box">💡 提示：${escapeHtml(card.hint)}</div>
+                ${card.ans.map(line => `<div class="answer-point">${line}</div>`).join("")}
+                ${card.code ? `<pre class="code-block">${escapeHtml(card.code)}</pre>` : ""}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+    function toggleListOne(id) { listOpenMap[id] = !listOpenMap[id]; renderList(); }
+    function toggleAllList(openState) { CARDS.forEach(c => { listOpenMap[c.id] = openState; }); renderList(); }
+
+    function toggleTheme() {
+      const root = document.documentElement;
+      const cur = root.getAttribute("data-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const next = (cur ? cur === "dark" : prefersDark) ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+    }
+
+    function resetAll() {
+      if (!confirm("確定要重置「資安與 API 防護」的單元與題卡進度嗎？")) return;
+      statusMap = {}; unitMap = {}; listOpenMap = {};
+      showAns = false; showHint = false; currentIdx = 0; secStep = 0; secPred = null; secQuiz = null;
+      try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(UNIT_STORAGE_KEY); } catch (_) {}
+      setCategory("all");
+      if (currentMode === "unit") renderSecUnit();
+    }
+
+    let touchStartX = 0, touchStartY = 0;
+    const touchCard = document.getElementById("touch-card");
+    touchCard.addEventListener("touchstart", e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: true });
+    touchCard.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) nextCard(); else prevCard(); }
+    }, { passive: true });
+
+    renderSecUnit();
+    renderCard();
+  </script>
+</body>
+</html>
