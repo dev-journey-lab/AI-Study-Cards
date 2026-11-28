@@ -458,14 +458,14 @@
         id: 9,
         cat: "be",
         catName: "後端與 API",
-        q: "公開 API 入口必設的「三個防塞爆硬上限（Body 大小、分頁筆數、Request Timeout）」各在防什麼？",
-        hint: "想想看：丟 100MB 垃圾 JSON、帶 ?limit=9999999、以及故意不送完封包的慢連線。",
+        q: "公開 API 入口必設的「三個防塞爆硬上限（Body 大小、分頁筆數、逾時保護）」各在防什麼？",
+        hint: "想想看：丟 100MB 垃圾 JSON、帶 ?limit=9999999 或 -1、慢速送封包，以及卡死的外部呼叫。",
         ans: [
           "• <b>1. Body 大小上限（如 1MB）</b>：防止攻擊者送超大 JSON 撐爆伺服器記憶體（OOM）。",
-          "• <b>2. 分頁筆數上限（如 <code>limit &lt;= 50</code>）</b>：防止查詢 <code>?limit=9999999</code> 一次撈出整張表拖垮資料庫。",
-          "• <b>3. 請求逾時（Timeout，如 10 秒）</b>：防止慢速連線（Slowloris）或卡死的外部呼叫長期占住所有執行緒。"
+          "• <b>2. 分頁筆數驗證與上限</b>：未帶時預設 <code>20</code>，只接受<b>正整數</b>（<code>-1</code>、<code>1.5</code>、非數字回 <code>400</code>），合法值超過 <code>50</code> 則截斷為 <code>50</code>，防一次撈爆資料庫。",
+          "• <b>3. 兩層逾時與取消</b>：<code>server.requestTimeout</code> 只限制「接收請求」時間（防 Slowloris）；請求收完後，資料庫與第三方 API 須各自設逾時與取消（如 DB <code>statement_timeout</code>、<code>AbortSignal.timeout(5000)</code>）。"
         ],
-        code: "// 設定舉例（Node / Express）\napp.use(express.json({ limit: '1mb' }));\nconst limit = Math.min(Number(req.query.limit) || 20, 50);\nserver.requestTimeout = 10_000;"
+        code: "// 設定舉例（Node / Express）\napp.use(express.json({ limit: '1mb' }));\nconst raw = req.query.limit;\nif (raw !== undefined && (!/^\\d+$/.test(raw) || Number(raw) < 1)) return res.status(400).end();\nconst limit = raw === undefined ? 20 : Math.min(Number(raw), 50);\nserver.requestTimeout = 10_000; // 僅限接收請求；下游改用 AbortSignal.timeout(5000) 與 DB statement_timeout"
       },
       {
         id: 10,
@@ -743,18 +743,21 @@ done</pre>
             <pre class="code-block"># 【設定舉例】依端點成本分級限流
 GET  /api/cards    -> 60 req/min/IP   + CDN 快取 5 分鐘
 POST /api/progress -> 30 req/min/user (須登入)
-POST /api/explain  ->  5 req/min/user (須登入 + Turnstile)</pre>
-            <div class="step-explain">流量擋在越外層越省錢；能快取的 <code>GET</code> 根本不用打進主機，會花錢的端點必須綁定帳號限流。</div>
+POST /api/explain  ->  5 req/min/user (須登入 + Turnstile 後端驗 token)</pre>
+            <div class="step-explain">流量擋在越外層越省錢；昂貴端點若搭配 Turnstile，<b>後端必須驗證 token 通過後</b>才執行付費操作，不能只靠前端顯示元件。</div>
           `;
         } else if (step === 2) {
           body.innerHTML = `
             <div class="step-label">步驟 3 / 5・入口寫死三個防塞爆硬上限（設定舉例）</div>
-            <div class="step-op">在後端入口限制 Body 大小、分頁筆數與請求逾時</div>
+            <div class="step-op">驗證 Body 大小、正整數分頁上限，並分開設定接收請求與下游呼叫逾時</div>
             <pre class="code-block">// 【設定舉例】Node / Express 入口防護
 app.use(express.json({ limit: "1mb" }));             // 1. Body 上限
-const limit = Math.min(Number(req.query.limit) || 20, 50); // 2. 最多 50 筆
-server.requestTimeout = 10_000;                      // 3. 逾時 10 秒</pre>
-            <div class="step-explain">這三行能擋掉超大 JSON 撐爆記憶體、<code>?limit=9999999</code> 撈爆資料庫與慢速連線長期佔線。</div>
+const raw = req.query.limit;                         // 2. 分頁驗證：缺省 20、只收正整數，其餘回 400
+if (raw !== undefined && (!/^\\d+$/.test(raw) || Number(raw) < 1)) return res.status(400).end();
+const limit = raw === undefined ? 20 : Math.min(Number(raw), 50);
+server.requestTimeout = 10_000;                      // 3a. 僅限「接收請求」逾時（防 Slowloris）
+fetch(upstream, { signal: AbortSignal.timeout(5000) }); // 3b. 下游 API / DB 須各自設逾時與取消</pre>
+            <div class="step-explain">這組規則會擋掉超大 JSON、拒絕 <code>-1</code>／<code>1.5</code>（回 <code>400</code>）並截斷超大 <code>limit</code>；同時把「收請求逾時」與「DB／第三方 API 逾時取消」分開控管。</div>
           `;
         } else if (step === 3) {
           const predHtml = pred !== null ? `
