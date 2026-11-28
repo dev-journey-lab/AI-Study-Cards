@@ -268,7 +268,7 @@
         <details class="cmd-details" style="margin-top:12px;">
           <summary>📝 階段實作核對（接上後端容器練習版時的排查交件）</summary>
           <div style="margin-top:8px;line-height:1.55;">
-            • 本倉庫目前為靜態版，尚未內建 Dockerfile；待啟動後端容器練習版時，交出 <code>docker ps</code>（顯示 <code>0.0.0.0:8000-&gt;8000/tcp</code>）、<code>docker logs --tail 20</code>（顯示監聽 <code>0.0.0.0</code>）與宿主機 <code>curl -i http://localhost:8000/health</code> 的 <code>200 OK</code>。
+            • 本倉庫目前為靜態版，尚未內建 Dockerfile；待啟動後端容器練習版時，交出 <code>docker ps</code>（顯示宿主機映射 <code>127.0.0.1:8000-&gt;8000/tcp</code>）、<code>docker logs --tail 20</code>（顯示容器內監聽 <code>0.0.0.0:8000</code>）與宿主機 <code>curl -i http://localhost:8000/health</code> 的 <code>200 OK</code>。
           </div>
         </details>
       </div>
@@ -606,13 +606,13 @@ HTTP/1.1 200 OK
             </div>
             <div class="diff-panel">
               <div class="diff-panel-title">綁 0.0.0.0（正常連通）</div>
-              <pre class="code-block" style="margin-top:0;">接受 Docker 虛擬網卡封包\n搭配 -p 8000:8000 即可連通</pre>
+              <pre class="code-block" style="margin-top:0;">接受 Docker 虛擬網卡封包\n搭配 -p 127.0.0.1:8000:8000 即可連通</pre>
             </div>
           </div>
         ` : "";
         body.innerHTML = `
           <div class="step-label">步驟 4 / 5・常見卡點預測</div>
-          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b><code>docker ps</code> 已正確顯示 <code>0.0.0.0:8000-&gt;8000/tcp</code>，但宿主機 <code>curl localhost:8000</code> 仍被重置連線，且 <code>docker logs</code> 寫著 <code>Listening on 127.0.0.1:8000</code>。</div>
+          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b><code>docker ps</code> 已正確顯示 <code>127.0.0.1:8000-&gt;8000/tcp</code>，但宿主機 <code>curl localhost:8000</code> 仍被重置連線，且 <code>docker logs</code> 寫著 <code>Listening on 127.0.0.1:8000</code>。</div>
           <div class="step-op">哪一條證據直接指向真正的根因？</div>
           <div class="choice-list">
             <button class="choice-btn ${dkPred === 0 ? "correct" : ""}" onclick="pickDkPred(0)">A. 服務綁在容器內的 127.0.0.1，必須改為監聽 0.0.0.0</button>
@@ -625,7 +625,7 @@ HTTP/1.1 200 OK
         const fb = showPassed ? `
           <div class="feedback-box feedback-ok">
             <b>✓ ${dkQuiz === 1 ? "答對了！已完成 Docker 故障排查單元" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
-            證據 1（<code>PORTS</code> 僅有 <code>8000/tcp</code>）代表少了 <code>-p 8000:8000</code>；證據 2（日誌寫 <code>127.0.0.1:8000</code>）代表容器內沒綁 <code>0.0.0.0</code>。兩者都修好才能連通！
+            證據 1（<code>PORTS</code> 僅有 <code>8000/tcp</code>）代表少了宿主機映射 <code>-p 127.0.0.1:8000:8000</code>；證據 2（日誌寫 <code>127.0.0.1:8000</code>）代表容器內沒綁 <code>0.0.0.0:8000</code>。兩者都修好並重建容器才能連通！
             <div style="margin-top:10px;">
               <button class="btn btn-primary" style="width:100%;" onclick="reviewDkCards()">👉 複習 Docker 與日誌排查題卡（8 題）</button>
             </div>
@@ -643,7 +643,7 @@ HTTP/1.1 200 OK
 [docker logs] Listening on http://127.0.0.1:8000</pre>
           <div class="choice-list">
             <button class="choice-btn ${dkQuiz === 0 ? "wrong" : ""}" onclick="pickDkQuiz(0)">A. 只在 Dockerfile 加 EXPOSE 8000，不需要動啟動參數或監聽位址</button>
-            <button class="choice-btn ${dkQuiz === 1 ? "correct" : ""}" onclick="pickDkQuiz(1)">B. 啟動時加上 -p 8000:8000 埠映射，並讓容器內服務改為監聽 0.0.0.0:8000</button>
+            <button class="choice-btn ${dkQuiz === 1 ? "correct" : ""}" onclick="pickDkQuiz(1)">B. 啟動時加上 -p 127.0.0.1:8000:8000 埠映射，並讓容器內服務改為監聽 0.0.0.0:8000</button>
             <button class="choice-btn ${dkQuiz === 2 ? "wrong" : ""}" onclick="pickDkQuiz(2)">C. 重開容器十次，直到 127.0.0.1 自動對外開放</button>
           </div>
           ${fb}

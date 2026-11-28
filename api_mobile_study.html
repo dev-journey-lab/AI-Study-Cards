@@ -936,12 +936,14 @@ DELETE /cards  -> 403 Forbidden    (伺服器理解請求但拒絕處理)</pre>
         body.innerHTML = `
           <div class="step-label">步驟 5 / 5・單元驗收</div>
           <div class="step-op">在 DevTools Network 看到以下紀錄，最直接的排查方向是什麼？</div>
-          <pre class="code-block">OPTIONS /api/cards -> 204 No Content
+          <pre class="code-block">OPTIONS /api/cards
+  Request  Access-Control-Request-Headers: x-request-id
+  Response 204 No Content
   Access-Control-Allow-Origin: https://dev-journey-lab.github.io
-  Access-Control-Allow-Headers: Authorization
+  Access-Control-Allow-Headers: X-Request-Id
 GET     /api/cards -> 401 Unauthorized
-  Access-Control-Allow-Origin: https://dev-journey-lab.github.io
-Request Headers: (未見 Authorization 標頭)</pre>
+  Request  X-Request-Id: req-102（未見 Authorization 標頭）
+  Response Access-Control-Allow-Origin: https://dev-journey-lab.github.io</pre>
           <div class="choice-list">
             <button class="choice-btn ${apiQuiz === 0 ? "wrong" : ""}" onclick="pickApiQuiz(0)">A. 這是 CORS 被瀏覽器擋住，要叫後端重改 OPTIONS 標頭</button>
             <button class="choice-btn ${apiQuiz === 1 ? "correct" : ""}" onclick="pickApiQuiz(1)">B. CORS 預檢已過，問題是缺少有效身分憑證：檢查前端為何沒帶 Authorization 或 Token 是否已過期</button>
