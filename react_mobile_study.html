@@ -153,8 +153,8 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
       background: var(--card-alt);
       padding: 4px;
       border-radius: 12px;
@@ -165,12 +165,13 @@
       border: none;
       background: transparent;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      padding: 9px 4px;
+      padding: 9px 2px;
       border-radius: 9px;
       cursor: pointer;
       transition: all 0.15s ease;
+      white-space: nowrap;
     }
 
     .tab-btn.active {
@@ -429,6 +430,41 @@
       color: var(--muted);
       margin-top: 10px;
     }
+
+    .unit-goal {
+      background: var(--card-alt); border-left: 3px solid var(--primary);
+      padding: 10px 12px; border-radius: 8px; font-size: 14px; margin: 10px 0 0 0;
+    }
+    .step-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+    .step-pill {
+      border: 1px solid var(--border); background: var(--card-alt); color: var(--muted);
+      font-size: 12px; font-weight: 700; padding: 6px 2px; border-radius: 8px; cursor: pointer; text-align: center;
+    }
+    .step-pill.active { background: var(--primary); border-color: var(--primary); color: var(--primary-fg); }
+    .step-pill.done { background: var(--success-soft); border-color: transparent; color: var(--success); }
+    .step-label { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .step-op { font-size: 17px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; }
+    .step-explain { margin-top: 12px; font-size: 15px; line-height: 1.55; }
+    .cmd-details {
+      margin-top: 12px; background: var(--card-alt); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 12px; font-size: 13px;
+    }
+    .cmd-details summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+    .choice-list { display: grid; gap: 8px; margin-top: 12px; }
+    .choice-btn {
+      width: 100%; text-align: left; border: 1px solid var(--border); background: var(--card-alt); color: var(--text);
+      font-size: 14px; font-weight: 600; padding: 12px 14px; border-radius: 12px; cursor: pointer; line-height: 1.45;
+    }
+    .choice-btn.correct { background: var(--success-soft); border-color: var(--success); }
+    .choice-btn.wrong { background: var(--warning-soft); border-color: var(--warning); }
+    .diff-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    @media (min-width: 460px) { .diff-grid { grid-template-columns: 1fr 1fr; } }
+    .diff-panel { background: var(--card-alt); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .diff-panel-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .feedback-box { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+    .feedback-ok { background: var(--success-soft); border: 1px solid var(--success); }
+    .feedback-warn { background: var(--warning-soft); border: 1px solid var(--warning); }
+    .step-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
   </style>
 </head>
 <body>
@@ -446,12 +482,13 @@
     </div>
 
     <div class="tabs">
-      <button id="tab-flashcard" class="tab-btn active" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
+      <button id="tab-unit" class="tab-btn active" onclick="switchMode('unit')">📖 單元教學</button>
+      <button id="tab-flashcard" class="tab-btn" onclick="switchMode('flashcard')">🗂 單卡測驗</button>
       <button id="tab-list" class="tab-btn" onclick="switchMode('list')">📋 題庫全覽</button>
       <button id="tab-arch" class="tab-btn" onclick="switchMode('arch')">🏗 流程總覽</button>
     </div>
 
-    <div id="cat-bar" class="cat-bar">
+    <div id="cat-bar" class="cat-bar hidden">
       <button id="cat-all" class="cat-pill active" onclick="setCategory('all')">全部 (10)</button>
       <button id="cat-render" class="cat-pill" onclick="setCategory('render')">渲染與資料流 (4)</button>
       <button id="cat-hooks" class="cat-pill" onclick="setCategory('hooks')">State 與 Effect (3)</button>
@@ -459,7 +496,41 @@
       <button id="cat-review" class="cat-pill" onclick="setCategory('review')">待複習 (0)</button>
     </div>
 
-    <div id="view-flashcard">
+    <!-- VIEW 0: Stage 2 React Unit 1 -->
+    <div id="view-unit">
+      <div class="card">
+        <div class="card-meta">
+          <div class="meta-left">
+            <span class="q-num">階段 2・React 單元 1</span>
+            <span class="q-cat">實戰手把手・5～8 分鐘</span>
+            <span id="rx-u1-status" class="status-tag hidden"></span>
+          </div>
+          <span id="rx-unit-badge" class="q-cat">學完 0 / 1 單元</span>
+        </div>
+        <div class="question-text" style="margin-bottom:6px;">做出載入中、成功、空資料與錯誤四態畫面</div>
+        <div class="unit-goal">
+          <b>學完要會做什麼：</b>能用 <code>useEffect</code> + <code>AbortController</code> 安全抓資料，並完整呈現載入中、錯誤重試、空資料與正常列表。
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="rx-step-pills" class="step-pills"></div>
+        <div id="rx-body"></div>
+        <div class="step-nav">
+          <button id="btn-rx-prev" class="btn" onclick="prevRxStep()">← 上一步</button>
+          <button id="btn-rx-next" class="btn btn-primary" onclick="nextRxStep()">下一步 →</button>
+        </div>
+        <details class="cmd-details" style="margin-top:12px;">
+          <summary>📝 階段實作核對（實作 React 題庫頁時的驗收點）</summary>
+          <div style="margin-top:8px;line-height:1.55;">
+            • 快速切換分類時，確認舊請求不會覆蓋新畫面，也不會提早關掉 <code>loading</code>。<br />
+            • 測試四種畫面皆正常顯示：載入中、有資料列表、空陣列提示、錯誤與「重試」按鈕。
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div id="view-flashcard" class="hidden">
       <div id="touch-card" class="card">
         <div class="card-meta">
           <div class="meta-left">
@@ -680,20 +751,34 @@
     ];
 
     const STORAGE_KEY = "agy_react_flashcards_v1";
+    const UNIT_STORAGE_KEY = "agy_react_units_v1";
     const THEME_KEY = "agy_study_theme_v1";
     let statusMap = {};
+    let unitMap = {};
     let listOpenMap = {};
-    let currentMode = "flashcard";
+    let currentMode = "unit";
     let currentCat = "all";
     let currentIdx = 0;
     let showAns = false;
     let showHint = false;
+    let rxStep = 0;
+    let rxPred = null;
+    let rxQuiz = null;
+
+    function readJsonMap(key) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
 
     try {
       const savedTheme = localStorage.getItem(THEME_KEY);
       if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) statusMap = JSON.parse(saved) || {};
+      statusMap = readJsonMap(STORAGE_KEY);
+      unitMap = readJsonMap(UNIT_STORAGE_KEY);
     } catch (_) {}
 
     function escapeHtml(str) {
@@ -703,10 +788,18 @@
         .replace(/>/g, "&gt;");
     }
 
-    function saveProgress() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap));
-      } catch (_) {}
+    function saveCardStatus(cardId, state) {
+      const latest = readJsonMap(STORAGE_KEY);
+      latest[cardId] = state;
+      statusMap = latest;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(statusMap)); } catch (_) {}
+    }
+
+    function saveUnitDone(unitId) {
+      const latest = readJsonMap(UNIT_STORAGE_KEY);
+      latest[unitId] = true;
+      unitMap = latest;
+      try { localStorage.setItem(UNIT_STORAGE_KEY, JSON.stringify(unitMap)); } catch (_) {}
     }
 
     function getFiltered() {
@@ -718,19 +811,143 @@
     function updateBadges() {
       const mastered = Object.values(statusMap).filter(v => v === "mastered").length;
       const review = Object.values(statusMap).filter(v => v === "review").length;
+      const unitsDone = Object.values(unitMap).filter(Boolean).length;
       document.getElementById("progress-badge").textContent = `已記住 ${mastered} / ${CARDS.length}`;
       document.getElementById("cat-review").textContent = `待複習 (${review})`;
+      const ub = document.getElementById("rx-unit-badge");
+      if (ub) ub.textContent = `學完 ${unitsDone} / 1 單元`;
+      const st = document.getElementById("rx-u1-status");
+      if (st) {
+        if (unitMap.unit1) { st.textContent = "✓ 已完成"; st.className = "status-tag status-mastered"; }
+        else { st.className = "status-tag hidden"; }
+      }
     }
 
     function switchMode(mode) {
       currentMode = mode;
-      ["flashcard", "list", "arch"].forEach(m => {
+      ["unit", "flashcard", "list", "arch"].forEach(m => {
         document.getElementById(`tab-${m}`).classList.toggle("active", m === mode);
         document.getElementById(`view-${m}`).classList.toggle("hidden", m !== mode);
       });
-      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch");
+      document.getElementById("cat-bar").classList.toggle("hidden", mode === "arch" || mode === "unit");
+      if (mode === "unit") renderRxUnit();
       if (mode === "flashcard") renderCard();
       if (mode === "list") renderList();
+    }
+
+    function reviewRxCards() {
+      switchMode("flashcard");
+      setCategory("all");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setRxStep(idx) { rxStep = Math.max(0, Math.min(4, idx)); renderRxUnit(); }
+    function prevRxStep() { if (rxStep > 0) setRxStep(rxStep - 1); }
+    function nextRxStep() { if (rxStep < 4) setRxStep(rxStep + 1); }
+    function pickRxPred(c) { rxPred = c; renderRxUnit(); }
+    function pickRxQuiz(c) {
+      rxQuiz = c;
+      if (c === 0) { saveUnitDone("unit1"); }
+      renderRxUnit();
+    }
+
+    function renderRxUnit() {
+      updateBadges();
+      const labels = ["1. 定四態", "2. 抓資料", "3. 畫介面", "4. 卡點預測", "5. 驗收題"];
+      document.getElementById("rx-step-pills").innerHTML = labels.map((lb, i) => {
+        const cls = i === rxStep ? "step-pill active" : (i === 4 && unitMap.unit1) ? "step-pill done" : "step-pill";
+        return `<button class="${cls}" onclick="setRxStep(${i})">${lb}</button>`;
+      }).join("");
+
+      const body = document.getElementById("rx-body");
+      if (rxStep === 0) {
+        body.innerHTML = `
+          <div class="step-label">步驟 1 / 5・先規劃畫面四種狀態與重試計數</div>
+          <div class="step-op">用 State 覆蓋「載入中、錯誤、空資料、成功」與重試觸發</div>
+          <pre class="code-block">const [cards, setCards] = useState([]);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState(null);
+const [retryKey, setRetryKey] = useState(0); // 遞增即可重跑同一主題請求</pre>
+          <div class="step-explain">寫介面之前先想好 4 種狀態與重試觸發器，才不會在失敗時卡死畫面或無法重試同一主題。</div>
+        `;
+      } else if (rxStep === 1) {
+        body.innerHTML = `
+          <div class="step-label">步驟 2 / 5・在 useEffect 安全抓資料與取消舊請求</div>
+          <div class="step-op">依賴 <code>[topic, retryKey]</code>，更新狀態前全數檢查 <code>!ctrl.signal.aborted</code></div>
+          <pre class="code-block">useEffect(() => {
+  const ctrl = new AbortController();
+  setLoading(true); setError(null);
+  fetch(\`/api/cards?topic=\${topic}\`, { signal: ctrl.signal })
+    .then(r => { if (!r.ok) throw new Error(\`HTTP \${r.status}\`); return r.json(); })
+    .then(data => { if (!ctrl.signal.aborted) setCards(data); })
+    .catch(err => { if (!ctrl.signal.aborted) setError(err); })
+    .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
+  return () => ctrl.abort();
+}, [topic, retryKey]);</pre>
+          <div class="step-explain">三個更新前都加守衛，既防止舊資料覆蓋新畫面，也不會提早關掉 <code>loading</code>；加上 <code>retryKey</code> 就能重試同一主題。</div>
+        `;
+      } else if (rxStep === 2) {
+        body.innerHTML = `
+          <div class="step-label">步驟 3 / 5・依序條件渲染四態畫面</div>
+          <div class="step-op">先擋 <code>loading</code> 與 <code>error</code>（附可運作的重試），再分流空資料與列表</div>
+          <pre class="code-block">const retry = () =&gt; setRetryKey(k =&gt; k + 1);
+if (loading) return &lt;p&gt;載入題庫中...&lt;/p&gt;;
+if (error) return &lt;button onClick={retry}&gt;載入失敗，點此重試&lt;/button&gt;;
+if (cards.length === 0) return &lt;p&gt;此主題目前沒有題目&lt;/p&gt;;
+return cards.map(c =&gt; &lt;StudyCard key={c.id} card={c} /&gt;);</pre>
+          <div class="step-explain">點重試會遞增 <code>retryKey</code> 重新觸發 <code>useEffect</code>，列表則使用穩定的 <code>c.id</code> 當作 <code>key</code>。</div>
+        `;
+      } else if (rxStep === 3) {
+        const predHtml = rxPred !== null ? `
+          <div class="feedback-box ${rxPred === 0 ? "feedback-ok" : "feedback-warn"}">
+            <b>${rxPred === 0 ? "✓ 觀念很穩！" : "↻ 別誤刪 Cleanup 或關掉 Strict Mode！"}</b>
+            React 開發環境的 <b>Strict Mode</b> 會刻意多跑一次 <code>setup → cleanup → setup</code>，幫你提早抓出沒清理計時器或沒取消請求的 Bug，正式上線（Production）只會跑一次。
+          </div>
+        ` : "";
+        body.innerHTML = `
+          <div class="step-label">步驟 4 / 5・常見卡點預測（Strict Mode 執行兩次）</div>
+          <div class="hint-box" style="margin-bottom:10px;">🔄 <b>情境切換：</b>你在本機開發環境打開 React 頁，發現 <code>useEffect(fn, [])</code> 在 Console 印了兩次請求。</div>
+          <div class="step-op">這代表你的依賴陣列 <code>[]</code> 寫錯了嗎？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${rxPred === 0 ? "correct" : ""}" onclick="pickRxPred(0)">A. 不是寫錯！開發環境 Strict Mode 會刻意多跑一次 setup + cleanup 來檢查副作用清理</button>
+            <button class="choice-btn ${rxPred === 1 ? "wrong" : ""}" onclick="pickRxPred(1)">B. 寫錯了！代表正式環境每次開頁也一定會重複打兩次 API</button>
+          </div>
+          ${predHtml}
+        `;
+      } else {
+        const showPassed = rxQuiz === 0 || (rxQuiz === null && unitMap.unit1);
+        const fb = showPassed ? `
+          <div class="feedback-box feedback-ok">
+            <b>✓ ${rxQuiz === 0 ? "答對了！已完成 React 單元 1" : "已完成本單元（可重新作答或直接複習題卡）"}</b><br />
+            只靠 <code>ctrl.abort()</code> 擋不了已經解析完正在排隊的 <code>.then()</code> 與 <code>.finally()</code>，必須在 <code>setCards</code>、<code>setError</code>、<code>setLoading(false)</code> 前都檢查 <code>!ctrl.signal.aborted</code>。
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary" style="width:100%;" onclick="reviewRxCards()">👉 複習 React 流程題卡（10 題）</button>
+            </div>
+          </div>
+        ` : rxQuiz !== null ? `
+          <div class="feedback-box feedback-warn">
+            <b>再看一次競態細節：</b>如果舊請求已經拿到 JSON 正在排隊跑 <code>.then()</code> 或 <code>.finally()</code>，只寫 <code>ctrl.abort()</code> 還少了一道守衛！再選一次。
+          </div>
+        ` : "";
+
+        body.innerHTML = `
+          <div class="step-label">步驟 5 / 5・單元驗收</div>
+          <div class="step-op">使用者快速從 <code>git</code> 切到 <code>react</code>，舊請求 <code>git</code> 雖已呼叫 <code>ctrl.abort()</code>，但回呼已排隊。哪個寫法能確保不覆蓋新資料也不提早關掉 <code>loading</code>？</div>
+          <div class="choice-list">
+            <button class="choice-btn ${rxQuiz === 0 ? "correct" : ""}" onclick="pickRxQuiz(0)">A. 在 setCards、setError 與 .finally() 的 setLoading(false) 前都先檢查 !ctrl.signal.aborted</button>
+            <button class="choice-btn ${rxQuiz === 1 ? "wrong" : ""}" onclick="pickRxQuiz(1)">B. 只在 .catch() 忽略 AbortError，.then() 與 .finally() 直接更新 State</button>
+            <button class="choice-btn ${rxQuiz === 2 ? "wrong" : ""}" onclick="pickRxQuiz(2)">C. 移除 Cleanup 的 ctrl.abort()，讓兩次請求依序自然覆蓋</button>
+          </div>
+          ${fb}
+        `;
+      }
+
+      const prevBtn = document.getElementById("btn-rx-prev");
+      const nextBtn = document.getElementById("btn-rx-next");
+      prevBtn.disabled = rxStep === 0;
+      prevBtn.style.opacity = rxStep === 0 ? "0.45" : "1";
+      prevBtn.style.gridColumn = rxStep === 4 ? "1 / -1" : "";
+      nextBtn.classList.toggle("hidden", rxStep === 4);
     }
 
     function setCategory(cat) {
@@ -835,8 +1052,7 @@
       const list = getFiltered();
       if (list.length === 0) return;
       const card = list[currentIdx];
-      statusMap[card.id] = state;
-      saveProgress();
+      saveCardStatus(card.id, state);
       updateBadges();
       if (state === "mastered") {
         nextCard();
@@ -910,14 +1126,22 @@
     }
 
     function resetAll() {
-      if (!confirm("確定要重置「React 流程」的學習進度嗎？")) return;
+      if (!confirm("確定要重置「React 流程」的單元與題卡進度嗎？")) return;
       statusMap = {};
+      unitMap = {};
       listOpenMap = {};
       showAns = false;
       showHint = false;
       currentIdx = 0;
-      saveProgress();
+      rxStep = 0;
+      rxPred = null;
+      rxQuiz = null;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(UNIT_STORAGE_KEY);
+      } catch (_) {}
       setCategory("all");
+      if (currentMode === "unit") renderRxUnit();
     }
 
     let touchStartX = 0;
@@ -947,6 +1171,7 @@
       }
     });
 
+    renderRxUnit();
     renderCard();
   </script>
 </body>

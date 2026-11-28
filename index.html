@@ -352,7 +352,7 @@
     <div class="summary-card">
       <div class="summary-top">
         <span class="summary-label">🎯 整體熟練度</span>
-        <span id="total-progress" class="summary-num">0 / 56 題（0%）</span>
+        <span id="total-progress" class="summary-num">0 / 64 題（0%）</span>
       </div>
       <div class="progress-track">
         <div id="total-bar" class="progress-fill"></div>
@@ -384,7 +384,7 @@
             <span class="stage-title">階段 3・跑得起、守得住</span>
             <span class="stage-action">前往 ↓</span>
           </div>
-          <div class="stage-sub">前後端資安 + API 限流與金鑰管控 + Docker／日誌排查（資安單元已上線）。</div>
+          <div class="stage-sub">前後端資安 + API 防打爆／金鑰管控 + Docker 與日誌排查（皆已上線）。</div>
         </button>
         <div class="stage-row stage-disabled">
           <div class="stage-head">
@@ -445,6 +445,8 @@
         desc: "HTTP 生命週期、RESTful 與狀態碼（401 vs 403）、JWT 驗證、CORS 預檢與 Network/cURL 除錯",
         href: "api_mobile_study.html",
         storageKey: "agy_api_flashcards_v1",
+        unitStorageKey: "agy_api_units_v1",
+        unitTotal: 1,
         total: 10,
         accent: "#0d9488"
       },
@@ -455,6 +457,8 @@
         desc: "Trigger → Render → Commit、單向資料流、Immutable State、useEffect 清理與 API 防競態",
         href: "react_mobile_study.html",
         storageKey: "agy_react_flashcards_v1",
+        unitStorageKey: "agy_react_units_v1",
+        unitTotal: 1,
         total: 10,
         accent: "#0284c7"
       },
@@ -469,6 +473,18 @@
         unitTotal: 2,
         total: 10,
         accent: "#dc2626"
+      },
+      {
+        stageNum: 3,
+        stage: "階段 3",
+        title: "🐳 Docker 與日誌排查",
+        desc: "容器 Up 卻連不到 API 故障排查、-p 埠映射與 0.0.0.0、docker logs／Volume／.dockerignore",
+        href: "docker_mobile_study.html",
+        storageKey: "agy_docker_flashcards_v1",
+        unitStorageKey: "agy_docker_units_v1",
+        unitTotal: 1,
+        total: 8,
+        accent: "#4f46e5"
       },
       {
         stageNum: 5,
